@@ -1,0 +1,13 @@
+# torch/torchvision are installed separately from the CUDA wheel index (see scripts/setup_aspire.sh)
+transformers==4.46.3
+accelerate==1.1.1
+sentencepiece==0.2.0
+protobuf==5.28.3
+pillow==11.0.0
+numpy==1.26.4
+scipy==1.14.1
+scikit-image==0.24.0
+pandas==2.2.3
+pyyaml==6.0.2
+tqdm==4.67.1
+huggingface_hub==0.26.2
