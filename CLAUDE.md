@@ -23,6 +23,13 @@ VCD assumes the "real" image is clean. If the input is already degraded, the rea
 
 **Expected result of Phase 1:** baseline and VCD perform about the same on degraded images, and VCD's gain shrinks as degradation severity increases.
 
+**Actual result (Stage 2, 2026-11-01): the F1 prediction is refuted, but the mechanism holds.** Details are in `docs/findings.md`, Stage 2.
+- VCD's POPE F1 gain *grows* with severity: greedy +1.2 on clean, +19.5 at blur s4, +20.1 at noise s4.
+- The gain is entirely a Yes/No threshold shift. VCD lowers AUROC in every cell, and a baseline thresholded to VCD's yes-ratio matches or beats VCD's F1.
+- Degradation pushes the baseline toward "no", so VCD's roughly constant push toward "yes" is worth more as severity rises.
+- The two branches do converge, as hypothesised: JS halves, and the discriminative part of the contrast halves.
+- **Phase 2 fixes must therefore be judged on AUROC and against the matched-threshold baseline**, not on F1 alone. Those numbers are in `results/stage2_margins.csv`.
+
 ## Research plan
 
 ### Phase 1: Reproduce the failure mode
@@ -30,7 +37,11 @@ Compare **baseline decoding** and **VCD** on clean images and on several degrada
 
 Degradations (decided 2026-10-30): **Gaussian blur** and **additive Gaussian noise**, 4 levels each plus clean. Blur is what the project brief names. Noise is the closest match to VCD's own diffusion noise, so it's the most direct test of the hypothesis. Low light is an optional third type if time allows. JPEG and downsampling were dropped: downsampling behaves much like blur, and JPEG barely matters until the quality is extreme. Fewer types keeps the grid (types × levels × methods × splits) manageable.
 
-- Levels live in `LEVELS` in `src/degradations.py`; that's the single source of truth. Recalibrate there if the contact sheet or a quick baseline run shows they're too weak or too strong.
+- Levels live in `LEVELS` in `src/degradations.py`; that's the single source of truth.
+  - Current levels (calibrated 2026-11-01): **blur σ 5/7/10/16, noise std 0.3/0.5/0.7/1.0**. These give greedy-baseline accuracy drops of about −3/−7/−14/−23 and −2/−12/−14/−20.
+  - The first ladder (blur 2/4/8/16, noise .05/.1/.2/.4) was too weak: noise s1–s3 had no effect. See `docs/findings.md`, Stage 1.
+  - Changing `LEVELS` means rebuilding the dataset (`scripts/pbs/make_degraded.pbs`) and archiving any results made under the old levels.
+  - Runs record `level_param`, so stale run dirs fail loudly instead of being resumed.
 - Degrade at the image's **native resolution**, before the model's image preprocessing, so the degraded image is the model's "real" input. LLaVA's resize to 336 px softens blur and averages out noise, so the levels are set stronger than they'd be at 336 px.
 - Degradations are deterministic: noise is seeded by `crc32(image|type|level)`.
 - VCD's own diffusion noise is applied on top of the degraded image at runtime, never saved to disk.
@@ -46,14 +57,64 @@ Degradations (decided 2026-10-30): **Gaussian blur** and **additive Gaussian noi
   pope/images/{blur,noise}/s{1..4}/COCO_val2014_*.png
   pope/manifest.csv                            # image, type, level, param, seed, psnr, ssim
   ```
-- **Built on ASPIRE (2026-10-30, job `26060930`):** 4500 PNGs (1.5 GB) plus `manifest.csv` in `/scratch/users/ntu/c230202/data/pope/`. This is the **canonical copy**; every experiment reads it. Mean PSNR/SSIM per level:
-  blur σ 2/4/8/16 → 24.3/22.0/19.9/18.0 dB, SSIM .70/.57/.49/.45; noise std .05/.10/.20/.40 → 26.3/20.5/15.0/10.4 dB, SSIM .61/.38/.20/.09.
+- **Built on ASPIRE:** 4500 PNGs plus `manifest.csv` in `/scratch/users/ntu/c230202/data/pope/`. This is the **canonical copy**; every experiment reads it.
+  - First built 2026-10-30. Rebuilt with the calibrated levels 2026-11-01 (job `26074795`).
+  - Per-level PSNR/SSIM: see `manifest.csv`, or the summary printed in `logs/make_degraded.log`.
+  - The local `data/pope/` copy was refreshed on 2026-11-01 and checksum-verified against ASPIRE (all 5004 files match). The shareable zip is `data/pope_dataset_v2.zip`.
+  - `data/pope.zip` (2026-10-30) and `data/pope_old_levels/` have the **old** levels; don't share them.
+  - To refresh the local copy, stream a tar over ssh (`ssh aspire 'tar -C <pope> -cf - .' | tar -xf -`). macOS's rsync stalled on this 2 GB tree.
 - **Sharing:** the dataset is **not** in git (`data/` is gitignored). The user shares it with teammates as a zip outside git. The code remote will be GitHub, which isn't set up yet.
 - **Rebuilding elsewhere:** a rebuild is reproducible on the same machine, but not byte-identical across Pillow versions. The JPEG decoder differs between Pillow 11.0 and 11.1, so pixels can differ by ±1 on fewer than 0.005% of them. Don't mix locally built images into results.
 - Pipeline:
   - `scripts/download_pope.py` downloads the question files and images. It needs internet, so run it on the login node.
   - `scripts/make_degraded.py` builds every version plus the manifest (CPU job: `scripts/pbs/make_degraded.pbs`).
   - `scripts/contact_sheet.py` makes a visual check grid at the model's 336 px input size.
+
+### Stage 0: Reproduce VCD on clean images (gate for everything else)
+
+The implementation must reproduce the paper's clean-image POPE gain before any degraded-image results mean anything.
+
+- **Reference details** (from the DAMO-NLP-SG/VCD repo; checked 2026-11-01):
+  - Prompt: llava_v1 template plus `" Please answer this question with one word."`
+  - Noise is added to the normalized `pixel_values`, on a sigmoid β schedule, at `noise_step=500`.
+  - Plausibility cutoff: `logits < log β + max logits`.
+  - Decoding: plain sampling (T=1, no top-p/top-k), `max_new_tokens=1024` (we use 16, since answers are one word).
+  - Scoring: gold "yes" is correct if `'yes' in answer`, gold "no" if `'no' in answer`.
+  - The paper uses α=1, β=0.1 and averages 5 runs. "Regular" in its tables is **sampling**, not greedy. Note the repo's bash script passes β=0.2; we follow the paper's 0.1.
+- **Verified locally:**
+  - `src/vcd.py` noise is bit-identical to the reference given the same RNG stream.
+  - The VCD logit step is identical.
+  - `src/eval_pope.py` matches the reference `eval_pope.py` exactly.
+  - The cached two-branch generation loop matches a no-cache recompute (tested with a tiny LLaVA).
+- **Paper targets** (LLaVA-1.5, POPE MSCOCO, acc / F1):
+
+  | split | Regular | VCD |
+  |---|---|---|
+  | random | 83.29 / 81.33 | 87.73 / 87.16 |
+  | popular | 81.88 / 80.06 | 85.38 / 85.06 |
+  | adversarial | 78.96 / 77.57 | 80.88 / 81.33 |
+
+  Pass criterion: our sampling numbers land within ~1.5 points of these, and VCD beats baseline on all three splits.
+
+- **Result (2026-11-01): PASSED with `noise_step=999`.** This is the VCD setting used for all later stages, and it's now the default in `scripts/run_pope.py`.
+  - **Baseline sampling:** F1 81.19 / 80.20 / 77.81 (Δ vs paper −0.14 / +0.14 / +0.24). The greedy baseline (85.51 F1, random) matches the paper's Appendix B.4 (85.54).
+  - **VCD, T=999, sampling:** F1 87.09 / 85.48 / 81.77 (Δ −0.07 / +0.42 / +0.44). VCD greedy on random gives 88.47 / 91.81 / 84.47 / 87.99, against the paper's 88.49 / 91.78 / 84.56 / 88.02.
+  - **VCD, T=500** (the repo script's default): gains are only +2.3 / +2.3 / +1.8 F1 with sampling, and ≈0 or negative with greedy. This matches the reproduction complaints in VCD GitHub issues #24, #16 and #9. Issue #24 is where T=999 for POPE was pointed out.
+  - **Greedy VCD (T=999):** helps on random (+2.5 F1) but barely on popular (+1.1) and not on adversarial (−0.1). Most of VCD's POPE gain comes from a recall/yes-ratio increase (yes-ratio 39% → 46–52%).
+  - Metrics are in `results/metrics/stage0_*.csv`. View them with `python -m scripts.summarize --prefix stage0`.
+- **Runs:** `python -m scripts.make_configs stage0` writes `configs/stage0/`:
+  - baseline and VCD × sampling seeds 55/56/57
+  - baseline and VCD × greedy
+  - `stage0_smoke` (30 questions)
+
+  Submit on ASPIRE with `bash scripts/submit.sh configs/stage0/<cfg>.yaml`.
+- **Outputs:**
+  - Per-question JSONL (answer, first-token Yes/No logits and log-probs for both branches, JS divergence) goes to `$VCD_OUTPUT_ROOT/<name>/` (on ASPIRE, `/scratch/users/ntu/c230202/results/raw`). Runs resume from it.
+  - Per-split metrics go to `results/metrics/<name>.csv`.
+- **Contrast-image strength:**
+  - At T=500, VCD's noised image is still strongly correlated (≈0.86) with the input, about as noisy as our noise s2–s3. That likely explains why T=500 gives weak gains.
+  - At T=999 (what we use), the correlation is ≈0.29, far heavier than any of our input degradations. The degraded-input hypothesis is therefore tested against a contrast image that is always much "blinder" than the input.
+  - Contrast strength clearly matters (T=500 → T=999 roughly doubles VCD's gain), which supports Phase 2 fix #2 (degradation-aware negative).
 
 ### Phase 2: Propose and evaluate two fixes
 Pick two from the candidates below (or our own), implement them as drop-in variants of the VCD sampling step, and evaluate them on the same grid as Phase 1.
