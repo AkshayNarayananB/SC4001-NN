@@ -138,7 +138,7 @@ def vcd_margin(cell: pd.DataFrame, alpha: float = 1.0, beta: float = 0.1) -> np.
     z_no = (1 + alpha) * cell["logit_no"] - alpha * cell["logit_no_cd"]
     top = np.maximum(cell["logprob_yes"], cell["logprob_no"])
     cut = np.log(beta) + top
-    m = (z_yes - z_no).to_numpy(float)
+    m = (z_yes - z_no).to_numpy(float).copy()
     m[(cell["logprob_no"] < cut).to_numpy()] = np.inf    # No masked out -> Yes
     m[(cell["logprob_yes"] < cut).to_numpy()] = -np.inf  # Yes masked out -> No
     return m
@@ -150,7 +150,7 @@ def margins(df: pd.DataFrame, n_boot: int, rng: np.random.Generator) -> pd.DataF
     contrast-branch margin, and of the VCD margin; and F1 of the baseline margin thresholded so its
     yes-ratio matches VCD's ("matched"), i.e. what a pure bias shift would get."""
     rows = []
-    vcd = df[(df["method"] == "vcd") & (df["decoding"] == "greedy")]
+    vcd = df[(df["method"] == "vcd")] # & (df["decoding"] == "greedy")]
     for key, cell in vcd.groupby(KEYS):
         cell = cell.sort_values("question_id")
         gold = (cell["label"] == "yes").to_numpy()
@@ -187,6 +187,7 @@ def main():
     args = parser.parse_args()
 
     df = load_records(args.stage)
+    df.loc[df["method"] == "vcd_zero", "method"] = "vcd"
     print(f"{len(df)} records loaded")
     comp = compare(df, args.boot, np.random.default_rng(0))
     diag = diagnostics(df)
@@ -197,14 +198,27 @@ def main():
     diag.to_csv(out / f"{args.stage}_diagnostics.csv", index=False, float_format="%.5f")
 
     pd.set_option("display.width", 200)
-    for decoding in sorted(comp["decoding"].unique()):
-        sub = comp[comp["decoding"] == decoding]
-        view = sub.groupby(["kind", "level"], sort=False)[["f1_base", "f1_vcd", "d_f1", "yes_base", "yes_vcd"]].mean() * 100
-        print(f"\n== {decoding}: mean over splits (%)\n{view.round(2)}")
+
+    # ADD THIS IF STATEMENT to prevent the crash when comp is empty
+    if not comp.empty and "decoding" in comp.columns:
+        for decoding in sorted(comp["decoding"].unique()):
+            sub = comp[comp["decoding"] == decoding]
+            view = sub.groupby(["kind", "level"], sort=False)[["f1_base", "f1_vcd", "d_f1", "yes_base", "yes_vcd"]].mean() * 100
+            print(f"\n== {decoding}: mean over splits (%)\n{view.round(2)}")
+            
     view = diag.groupby(["decoding", "kind", "level"], sort=False)[["mean_abs_dm", "dm_gold_yes", "dm_gold_no", "mean_js"]].mean()
     print(f"\n== VCD contrast diagnostics, mean over splits\n{view.round(4)}")
     view = marg.groupby(["kind", "level"], sort=False)[["auroc_real", "auroc_cd", "auroc_vcd", "f1_real", "f1_matched", "f1_vcd", "agree_answer"]].mean()
     print(f"\n== greedy first-token margins, mean over splits\n{view.round(4)}")
+
+    # for decoding in sorted(comp["decoding"].unique()):
+    #     sub = comp[comp["decoding"] == decoding]
+    #     view = sub.groupby(["kind", "level"], sort=False)[["f1_base", "f1_vcd", "d_f1", "yes_base", "yes_vcd"]].mean() * 100
+    #     print(f"\n== {decoding}: mean over splits (%)\n{view.round(2)}")
+    # view = diag.groupby(["decoding", "kind", "level"], sort=False)[["mean_abs_dm", "dm_gold_yes", "dm_gold_no", "mean_js"]].mean()
+    # print(f"\n== VCD contrast diagnostics, mean over splits\n{view.round(4)}")
+    # view = marg.groupby(["kind", "level"], sort=False)[["auroc_real", "auroc_cd", "auroc_vcd", "f1_real", "f1_matched", "f1_vcd", "agree_answer"]].mean()
+    # print(f"\n== greedy first-token margins, mean over splits\n{view.round(4)}")
 
 
 if __name__ == "__main__":
