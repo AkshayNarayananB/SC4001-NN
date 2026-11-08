@@ -9,4 +9,4 @@ hf_cache/
 results/
 *.log
 pbs/
-configs/
+configs/pope_dataset.zip
