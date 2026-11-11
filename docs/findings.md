@@ -303,3 +303,43 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
 - Optional follow-ups:
   - B0/B1 with sampling seeds 55/56/57, for the sampling table.
   - The clean-image cell, to confirm that an always-on DAE doesn't hurt clean images. Validation passed clean images through exactly unchanged, so the POPE result should be identical to the baseline.
+
+## Phase 2, ViewLayer+DAE: a denoised view on top of ViewLayer, and VCD's contrast on top of that (2026-11-11)
+
+**Setup**
+- Started as "ViewVCD": VCD's formula with a stronger real branch, `score = (1+α) · mean over views of m_L(v) − α · m_L(v_cd)`.
+  - Views: the degraded image, blur σ 1/2/3, horizontal flip (all from the ViewLayer records) and the `dae_v1`-restored copy.
+  - Contrast `v_cd`: VCD's diffusion-noised image at T=999, with the same noise as the Stage 2 runs. No plausibility mask.
+- Views, layer, α ∈ {0, 0.25, 0.5, 1, 2} and the threshold are chosen on the 100 DEV images; results are on the 400 TEST images (`fix_eval` scoring).
+- Runs: jobs `26199460` (smoke) and `26199954` (9 conditions). Code, full tables and caveats: `ViewLayerDAE/README.md`. Tables: `results/viewlayer_dae_*.csv`.
+
+### Results: mean over the 3 splits (TEST)
+
+| Condition | AUROC baseline | AUROC VCD | AUROC ViewLayer | AUROC ViewLayer+DAE | F1 VCD | F1 ViewLayer | F1 ViewLayer+DAE |
+|---|---|---|---|---|---|---|---|
+| Clean | .940 | .935 | .945 | .945 | 85.7 | 84.5 | 85.2 |
+| Blur s1 | .907 | .904 | .915 | .915 | 82.3 | 83.4 | 83.3 |
+| Blur s2 | .877 | .875 | .892 | .892 | 79.0 | 80.8 | 80.9 |
+| Blur s3 | .836 | .834 | .857 | .857 | 73.1 | 77.8 | 77.3 |
+| Blur s4 | .750 | .749 | .782 | .782 | 59.7 | 68.6 | 66.9 |
+| Noise s1 | .910 | .906 | .925 | .927 | 81.9 | 83.7 | 84.1 |
+| Noise s2 | .878 | .874 | .903 | .909 | 78.0 | 81.7 | 82.7 |
+| Noise s3 | .823 | .821 | .873 | .882 | 72.5 | 79.0 | 79.7 |
+| Noise s4 | .737 | .737 | .817 | .833 | 62.7 | 73.9 | 75.5 |
+
+### Findings
+
+1. **DEV switched the contrast off.** The selected setting is all six views at layer 20 with α = 0. DEV AUROC falls monotonically with α: 0.882 (α = 0), 0.878 (0.25), 0.861 (2).
+2. **The DAE view adds to ViewLayer on noise and changes nothing elsewhere.**
+   - AUROC is above ViewLayer's in all 12 noise cells (+0.002 to +0.018, CI > 0). On blur and clean the difference is within ±0.001.
+   - Against the baseline: AUROC is higher in 26 of 27 cells and lower in none. F1 beats the matched-threshold baseline in 13 cells (ViewLayer: 11).
+   - F1 on blur s3–s4 is slightly below ViewLayer's (66.9 vs 68.6 at s4). The ranking is the same; the single DEV threshold landed differently.
+3. **VCD's contrast does not help a strong real branch.**
+   - Forced on at α = 0.25 with the six views, AUROC drops by about 0.005 on clean and blur and is level at noise s3–s4.
+   - Plain VCD without the mask at layer 20 beats the baseline in 17 of 27 cells, but ViewLayer's layer-only variant does better with no subtraction, so the gain is the layer-20 readout.
+   - The lead from the unmasked-VCD AUROC (above the baseline at blur s4 and noise s3–s4) does not carry over.
+4. **Sanity checks.** The `viewlayer` variant reproduces `ViewLayer/README.md` exactly. The contrast view at layer 32 matches the Stage 2 contrast logits to within 0.11.
+
+### Open points
+- **Not yet compared with the DAE alone.** Fix B's B0 scored .833 at noise s4 on all 500 images at the final layer; the .833 here is on the 400 TEST images at layer 20. Rescore Fix B through `fix_eval/common.py` before claiming the combination beats the DAE alone.
+- Stage 2 and Fix B still use the tie-based AUROC for masked answers (`scripts/analyze.py`). Under the `fix_eval` scoring VCD roughly ties the baseline (at most −0.005) instead of losing by up to −0.054.
