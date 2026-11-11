@@ -1,0 +1,15 @@
+name: "vcd_zero_noise_s4"
+model_id: "llava-hf/llava-1.5-7b-hf"
+method: "vcd_zero"
+
+alpha: 1.0
+beta: 0.1
+noise_step: 999
+
+kind: "noise"
+level: 4
+
+sample: true
+temperature: 1.0
+seeds: [55, 56, 57]
+max_new_tokens: 16
