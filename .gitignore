@@ -11,3 +11,6 @@ hf_cache/
 # results/: small metric tables are tracked; raw per-question outputs stay on ASPIRE scratch
 results/raw/
 results/**/*.jsonl
+
+# large POPE dataset archive (akshay-branch)
+configs/pope_dataset.zip
