@@ -100,6 +100,7 @@ This is a new subsection placed after ViewLayer. Use `docs/probe_results.md` §2
   - **1 pass vs 5.**
 - **Generalisation.** Trained without noise, it still gains +.035 on noise. Trained without blur, it gains +.041 on blur.
 - **Uncertainty (topic E).** In risk–coverage, AURC is .097 vs .131 for the baseline. At 50% coverage, accuracy is 90.6% vs 85.3%.
+- **Optional extension, pending the team's decision and a ~6 h run.** The pilot is in `docs/probe_results.md` §7. Applying the same probe to ViewLayer's views reaches .852 on noise s4 (ViewLayer .817) and .832 on blur s4 (ViewLayer .781). It beats ViewLayer in all 6 s4 cells. This would become the best-accuracy operating point, with the 1-pass probe as the cheap one.
 - **Novelty claim (hedged).** "To our knowledge, self-distilled probes from clean to degraded inputs have not been used for VLM hallucination."
 
 ### Act 8: Discussion and conclusion (§5–6)

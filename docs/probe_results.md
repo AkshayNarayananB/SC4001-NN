@@ -218,6 +218,65 @@ It is a different mechanism, not a ViewLayer extension. ViewLayer adds informati
 
 **Where it loses.** It loses on noise s3–s4, the regime where the input itself has lost information (§5, point 3). There, ViewLayer's views remain the better choice when 5× compute is affordable.
 
+## 7. Pilot: probes on ViewLayer's views (blur s4 and noise s4 only)
+
+**Question.** The probe fixes the readout, and ViewLayer's views fix the input. Do the two gains add up?
+
+**Setup.**
+- The probes are **not retrained**. These are the same gold and clean-teacher probes as in §1, fit on the original view of the DEV images.
+- Each probe scores every one of ViewLayer's views: original, blur σ=1/2/3 and h-flip. The scores are then averaged, as ViewLayer averages margins.
+- The views come from the view runs already made for the head-to-head in §2.3. Those exist only for **blur s4 and noise s4**, so this is a 6-cell pilot, not the full 27-cell table.
+- Script: `python -m scripts.probe_views`.
+
+### 7.1 TEST AUROC, mean of three splits
+
+| Method | Passes | Blur s4 | Noise s4 |
+|---|---|---|---|
+| Baseline | 1 | .750 | .737 |
+| ViewLayer | 5 | .781 | .817 |
+| Clean-teacher probe | 1 | .830 | .801 |
+| Clean-teacher probe, original + blur σ=1 | 2 | .830 | .833 |
+| **Clean-teacher probe × 5 views** | 5 | **.832** | **.852** |
+| Gold probe L24 | 1 | .848 | .820 |
+| Gold probe, original + blur σ=1 | 2 | .848 | .849 |
+| **Gold probe × 5 views** | 5 | **.849** | **.866** |
+
+### 7.2 Per split, with the paired-bootstrap Δ against ViewLayer
+
+The intervals are 95% paired-bootstrap intervals over 500 resamples.
+
+| Cell | ViewLayer | Teacher (1 pass) | Teacher × 5 views | Δ teacher×5 − ViewLayer [95% CI] | Gold × 5 views | Δ gold×5 − ViewLayer [95% CI] |
+|---|---|---|---|---|---|---|
+| blur s4 random | .835 | .863 | .866 | [+.021, +.039] | .870 | [+.022, +.045] |
+| blur s4 popular | .789 | .862 | .864 | [+.065, +.084] | .887 | [+.085, +.109] |
+| blur s4 adversarial | .721 | .765 | .766 | [+.035, +.056] | .791 | [+.057, +.084] |
+| noise s4 random | .868 | .832 | .883 | [+.006, +.024] | .888 | [+.009, +.030] |
+| noise s4 popular | .821 | .834 | .882 | [+.051, +.071] | .903 | [+.070, +.094] |
+| noise s4 adversarial | .762 | .736 | .790 | [+.018, +.038] | .808 | [+.033, +.059] |
+
+### 7.3 What it shows
+
+- **It breaks the noise ceiling.** Every single-pass readout plateaued at about .80–.82 on noise s4 (§5, point 3). With views added, the label-free teacher reaches .852 and the gold probe .866. Both beat ViewLayer significantly in **all 6 cells**.
+- **The gains add as the diagnosis predicted.**
+  - On noise, the views lift the probe by +.05: they restore evidence the noise destroyed.
+  - On blur, the views add almost nothing (+.002): the evidence was present but mis-read, and the probe already fixes that. ViewLayer's own ablation found the same, with views-only giving .753 on blur s4.
+- **A cheaper variant also beats ViewLayer.** With two passes, original plus blur σ=1, the teacher reaches .830 / .833, beating ViewLayer's .781 / .817 on both degradations at 2/5 of the compute.
+- **The labelled probe is not needed.** The label-free teacher × 5 views is within .014–.017 of the gold probe × 5 views.
+
+### 7.4 Caveats before this goes in the report
+
+- **Pilot scale.** These are 6 cells (s4 only). Clean, s1–s3, and the full Sig ↑/↓ counts need the view runs for the other 7 conditions: 28 GPU runs, about 6 h on the local GPU.
+- **Post-hoc 2-view subset.** The view set for "× 5 views" is ViewLayer's own DEV-chosen set, so it involves no new selection. The 2-view subset (original + blur σ=1) was picked after looking at these TEST numbers. For the report, choose the view set on DEV.
+- **No F1 yet.** F1 and thresholds are not computed here. AUROC only.
+- **Framing.** This reuses ViewLayer's views, so credit them. The fair statement is that the probe replaces ViewLayer's fixed layer-20 readout. With the views kept, that one change takes noise s4 from .817 to .852 and blur s4 from .781 to .832.
+
+**Options for the team:**
+
+| Option | Compute | Status |
+|---|---|---|
+| (a) Clean-teacher probe as the low-cost single-pass alternative | 1 pass | Results complete (§2, §6) |
+| (b) Add "probe + views" as the best-accuracy operating point | 2 or 5 passes | Needs the ~6 h run for the full table |
+
 ## Reproducing
 
 ```bash
