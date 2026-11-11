@@ -1,0 +1,56 @@
+digraph storyline {
+  graph [rankdir=TB, fontname="Arial", nodesep=0.35, ranksep=0.42, pad=0.3, bgcolor="white", newrank=true,
+         label=<<B>Storyline: Does Visual Contrastive Decoding still help on degraded images?</B><BR/><FONT POINT-SIZE="11" COLOR="#52514E">LLaVA-1.5-7B on POPE · AUROC on the 400 test images, mean of 3 splits · green = helps, orange = does not help</FONT><BR/> >,
+         labelloc=t, fontsize=17];
+  node  [shape=box, style="rounded,filled", fontname="Arial", fontsize=11, penwidth=1.2, margin="0.16,0.08"];
+  edge  [color="#52514E", penwidth=1.2, arrowsize=0.7, fontname="Arial", fontsize=10, fontcolor="#52514E"];
+
+  // palette
+  //   question / setup: slate   finding: blue   negative: orange   positive: green   final: dark blue
+
+  q [fillcolor="#EEF0F3", color="#52514E", label=<<B>Question</B><BR/>VCD subtracts the output for a diffusion-noised copy of the image.<BR/>It assumes the image is clean. What if it is already blurred or noisy?<BR/><I>Hypothesis: the two passes converge, so VCD's gain shrinks with degradation.</I>>];
+
+  setup [fillcolor="#EEF0F3", color="#52514E", label=<<B>Setup and data</B><BR/>500 COCO images, 3 POPE splits (random / popular / adversarial)<BR/>Gaussian blur σ 5 / 7 / 10 / 16 and noise std 0.3 / 0.5 / 0.7 / 1.0<BR/>Levels calibrated in a pilot run (a first, weaker ladder had no effect)>];
+
+  repro [fillcolor="#E3EEFB", color="#2A78D6", label=<<B>4.1  Reproduce VCD on clean images</B><BR/>Within 0.5 F1 of the paper with T = 999<BR/>Already on clean images most of the gain is a higher yes-rate>];
+
+  vcd [fillcolor="#E3EEFB", color="#2A78D6", label=<<B>4.2  VCD on degraded images</B><BR/>F1 gain <B>grows</B>: +1.5 clean → +18.6 blur s4 → +18.9 noise s4<BR/><I>Hypothesis refuted on F1 …</I>>];
+
+  diag [fillcolor="#E3EEFB", color="#2A78D6", label=<<B>… but it is a threshold shift, not better grounding</B><BR/>Degradation makes LLaVA say “no” (yes-rate 41% → 16%)<BR/>Baseline moved to VCD's yes-rate matches or beats VCD's F1<BR/>AUROC unchanged (−0.0024) once forced answers are ranked consistently<BR/>The passes do converge: JS divergence halves>];
+
+  proto [fillcolor="#EEF0F3", color="#52514E", label=<<B>Evaluation protocol for every fix</B><BR/>100 dev images for all choices · 400 test images for results<BR/>AUROC + matched-threshold baseline + paired bootstrap CIs>];
+
+  // ---------------- three families of fixes
+  subgraph cluster_sub {
+    label=<<B>Subtract something better</B>>; fontsize=12; style="rounded,dashed"; color="#EB6834"; fontcolor="#B34A1E";
+    nulls [fillcolor="#FDEBE3", color="#EB6834", label=<<B>New contrast images</B><BR/>Phase-scrambled null: worse in 17/27<BR/>Mean-image null: +0.0003<BR/>Zeroed / shuffled visual tokens:<BR/>same pattern as VCD>];
+  }
+  subgraph cluster_dec {
+    label=<<B>Borrow other decoders</B>>; fontsize=12; style="rounded,dashed"; color="#EB6834"; fontcolor="#B34A1E";
+    dola   [fillcolor="#FDEBE3", color="#EB6834", label=<<B>DoLa → entropy routing</B><BR/>JS layer choice breaks the output<BR/>entropy routing ≈ baseline>];
+    ritual [fillcolor="#FDEBE3", color="#EB6834", label=<<B>RITUAL</B> (extra views, final layer)<BR/>±0.003 AUROC, lower F1<BR/>but the <B>blur view</B> helps on noise>];
+    deco   [fillcolor="#FDEBE3", color="#EB6834", label=<<B>DeCo</B> (mix in a middle layer)<BR/>+0.0008 AUROC<BR/>but <B>layer ~20</B> ranks better than 32>];
+  }
+  subgraph cluster_add {
+    label=<<B>Add evidence instead</B>>; fontsize=12; style="rounded,dashed"; color="#1BAF7A"; fontcolor="#0E7A52";
+    vl  [fillcolor="#E2F5EC", color="#1BAF7A", label=<<B>ViewLayer</B> (training-free)<BR/>RITUAL's blur view + DeCo's layer 20:<BR/>5 views (orig, blur σ1–3, flip)<BR/>margin read at layer 20<BR/>+0.028 · better in 26/27<BR/>noise s4 .737 → .817>];
+    dae [fillcolor="#E2F5EC", color="#1BAF7A", label=<<B>DAE restoration</B> (trained U-Net, 7.2M)<BR/>Noise: AUROC +0.099 at s4 (.836)<BR/>Blur: unrecoverable (even Wiener fails)<BR/>VCD on restored image (B1): best F1<BR/>at threshold 0, still only recalibrates>];
+  }
+
+  final [fillcolor="#DCE7F7", color="#0B2F66", penwidth=2.2, label=<<B>ViewLayer+DAE (final method)</B><BR/>6 views incl. the restored image, layer 20<BR/>Dev picks α = 0: VCD's contrast is <B>not</B> used<BR/>+0.032 mean AUROC · better in 26/27, never worse<BR/>F1 up to +6.7 over an equally tuned baseline<BR/>Views + layer handle blur, the DAE handles noise>];
+
+  concl [fillcolor="#EEF0F3", color="#52514E", label=<<B>Conclusion</B><BR/>On degraded images VCD recalibrates rather than grounds.<BR/>Report AUROC and a matched-threshold baseline, not F1 alone.<BR/>Adding evidence (views, a middle layer, restoration) is what helps.>];
+
+  negsum [fillcolor="#FDEBE3", color="#EB6834", label=<<B>Lesson from the failures</B><BR/>Everything that subtracts or re-weights the final layer<BR/>stays within about ±0.003 mean AUROC of the baseline:<BR/>it cannot add evidence the degraded image has lost>];
+
+  { rank=same; nulls; dola; ritual; deco; vl; dae; }
+  { rank=same; negsum; final; }
+
+  q -> setup -> repro -> vcd -> diag -> proto;
+  proto -> nulls; proto -> dola; proto -> ritual; proto -> deco; proto -> vl; proto -> dae;
+  nulls -> dola -> ritual -> deco -> vl -> dae [style=invis];
+  nulls -> negsum; dola -> negsum; ritual -> negsum; deco -> negsum;
+  vl -> final; dae -> final;
+  negsum -> final [style=invis];
+  negsum -> concl; final -> concl;
+}
