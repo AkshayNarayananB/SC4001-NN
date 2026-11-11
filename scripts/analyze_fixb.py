@@ -9,7 +9,8 @@ Variants (per question, aligned by question id within each (kind, level, split) 
   b2  VCD + DAE vs degraded   contrast = the original degraded image
 
 Per variant: F1, yes-ratio, AUROC of the first-token Yes-No margin (VCD margins recomputed from the
-logged logits, as in analyze.margins), and F1 of the *baseline* margin thresholded to the variant's
+logged logits; answers forced by the plausibility mask are ranked by that variant's own real-branch
+margin with analyze.decision_score, not tied), and F1 of the *baseline* margin thresholded to the variant's
 yes-ratio (a pure bias shift); for b1/b2 also f1_matched_b0_<v>, the restored baseline (b0) thresholded the
 same way, which is the fair control for VCD on a restored input. For VCD variants also JS and mean |dm| (contrast size).
 
@@ -19,13 +20,16 @@ Key paired deltas with bootstrap 95% CIs over questions:
   interaction_auroc = [AUROC(b1) - AUROC(b0)] - [AUROC(vcd) - AUROC(baseline)]
       > 0 means VCD contributes more on a restored input: the fix helps VCD itself, not just the input.
 Same for F1. Writes results/fixb_comparison.csv; run on ASPIRE where the raw records live.
+With --test-only, only the 400 TEST images of fix_eval/common.py are scored, so the numbers are
+comparable with the other Phase 2 fixes; writes results/fixb_comparison_test.csv.
 """
 import argparse
 
 import numpy as np
 import pandas as pd
 
-from scripts.analyze import auroc, f1_from, load_records, vcd_margin
+from fix_eval.common import dev_images
+from scripts.analyze import auroc, decision_score, f1_from, load_records, vcd_margin
 from src.paths import REPO_ROOT
 
 KEYS = ["kind", "level", "split"]
@@ -45,6 +49,11 @@ def margin(cell: pd.DataFrame) -> np.ndarray:
     return vcd_margin(cell)
 
 
+def ranking(cell: pd.DataFrame) -> np.ndarray:
+    """Score used for AUROC: the margin, with mask-forced answers ordered by the variant's real branch."""
+    return decision_score(margin(cell), (cell["logit_yes"] - cell["logit_no"]).to_numpy(float))
+
+
 def matched_f1(m_base, yes_ratio, gold):
     return f1_from(m_base > np.quantile(m_base, 1 - yes_ratio), gold)
 
@@ -59,11 +68,12 @@ def analyze(df: pd.DataFrame, n_boot: int, rng) -> pd.DataFrame:
         assert all((c["question_id"].to_numpy() == qids).all() for c in by.values()), key
         gold = (by["baseline"]["label"] == "yes").to_numpy()
         m = {v: margin(c) for v, c in by.items()}
+        rank = {v: ranking(c) for v, c in by.items()}
         row = dict(zip(KEYS, key), n=gold.size)
         for v, mv in m.items():
             row[f"f1_{v}"] = float(f1_from(mv > 0, gold))
             row[f"yes_{v}"] = (mv > 0).mean()
-            row[f"auroc_{v}"] = auroc(mv, gold)
+            row[f"auroc_{v}"] = auroc(rank[v], gold)
             row[f"f1_matched_{v}"] = float(matched_f1(m["baseline"], (mv > 0).mean(), gold))
             if "b0" in m and v in ("b1", "b2"):  # restored baseline at this variant's yes-ratio: the fair bias-shift control
                 row[f"f1_matched_b0_{v}"] = float(matched_f1(m["b0"], (mv > 0).mean(), gold))
@@ -75,7 +85,7 @@ def analyze(df: pd.DataFrame, n_boot: int, rng) -> pd.DataFrame:
         idx = rng.integers(0, gold.size, size=(n_boot, gold.size))
         def stat(fn):
             return np.array([fn(i) for i in idx])
-        A = lambda v, i: auroc(m[v][i], gold[i])
+        A = lambda v, i: auroc(rank[v][i], gold[i])
         F = lambda v, i: f1_from(m[v][i] > 0, gold[i])
         deltas = {}
         if "b0" in m:
@@ -100,14 +110,18 @@ def analyze(df: pd.DataFrame, n_boot: int, rng) -> pd.DataFrame:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--boot", type=int, default=1000)
+    parser.add_argument("--test-only", action="store_true", help="score only the 400 TEST images of fix_eval")
     args = parser.parse_args()
 
     df = pd.concat([load_records("stage2"), load_records("fixb")], ignore_index=True)
     df = df[(df["decoding"] == "greedy") & (df["kind"] == "noise") & df["limit"].isna()]
     df["variant"] = df.apply(variant, axis=1)
+    if args.test_only:
+        df = df[~df["image"].isin(dev_images({0: df}))]
     print(f"{len(df)} greedy noise records; variants {sorted(df['variant'].unique())}")
     out = analyze(df, args.boot, np.random.default_rng(0))
-    out.to_csv(REPO_ROOT / "results" / "fixb_comparison.csv", index=False, float_format="%.5f")
+    name = "fixb_comparison_test.csv" if args.test_only else "fixb_comparison.csv"
+    out.to_csv(REPO_ROOT / "results" / name, index=False, float_format="%.5f")
 
     pd.set_option("display.width", 250)
     variants = [v for v in ["baseline", "vcd", "b0", "b1", "b2"] if f"f1_{v}" in out]

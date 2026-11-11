@@ -25,7 +25,8 @@ VCD assumes the "real" image is clean. If the input is already degraded, the rea
 
 **Actual result (Stage 2, 2026-11-01): the F1 prediction is refuted, but the mechanism holds.** Details are in `docs/findings.md`, Stage 2.
 - VCD's POPE F1 gain *grows* with severity: greedy +1.2 on clean, +19.5 at blur s4, +20.1 at noise s4.
-- The gain is entirely a Yes/No threshold shift. VCD lowers AUROC in every cell, and a baseline thresholded to VCD's yes-ratio matches or beats VCD's F1.
+- The gain is entirely a Yes/No threshold shift. VCD does not raise AUROC (within −0.006 to +0.002 of the baseline; CI below zero in 21 of 27 cells), and a baseline thresholded to VCD's yes-ratio matches or beats VCD's F1.
+  - AUROC scoring was corrected on 2026-11-11: answers forced by the plausibility mask are ranked by the real-branch margin (`decision_score` in `scripts/analyze.py`), not tied. The earlier "−0.016 to −0.054" drop was mostly a tie artifact.
 - Degradation pushes the baseline toward "no", so VCD's roughly constant push toward "yes" is worth more as severity rises.
 - The two branches do converge, as hypothesised: JS halves, and the discriminative part of the contrast halves.
 - **Phase 2 fixes must therefore be judged on AUROC and against the matched-threshold baseline**, not on F1 alone. Those numbers are in `results/stage2_margins.csv`.
@@ -150,10 +151,18 @@ Report how each fix changes F1 relative to VCD and to baseline at each severity 
   - Analysis: `python -m scripts.analyze_fixb` (on ASPIRE) → `results/fixb_comparison.csv`, reporting AUROC, matched F1, JS/|dm| and bootstrap CIs for the restore effect, b1 − VCD, and the interaction.
 - **Result (2026-11-02; details in `docs/findings.md`, Phase 2 fix B): restoration works, but as an input fix, not a VCD fix.**
   - **B0 (baseline + DAE)** is the first intervention to raise AUROC above the baseline (+0.011 / +0.024 / +0.049 / +0.097 for s1–s4). It also beats its matched-threshold baseline (+1.4 to +6.5 F1).
-  - **B1 (VCD + DAE)** has the best F1 (+0.8 to +7.4 over VCD). But AUROC(B1) < AUROC(B0) everywhere, the interaction is ≈ 0, and B0 thresholded to B1's yes-ratio beats B1. So VCD still only recalibrates.
+  - **B1 (VCD + DAE)** has the best F1 (+0.8 to +7.4 over VCD). But AUROC(B1) < AUROC(B0) everywhere (−0.004 to −0.008), the interaction is zero or slightly negative, and B0 thresholded to B1's yes-ratio beats B1. So VCD still only recalibrates.
   - **Restoring the positive doesn't reopen the contrast gap:** B1's JS is slightly *below* VCD's.
   - **B2 is dominated;** drop it.
 - **Evaluation plan:** variants B0 = baseline + DAE (control), B1 = VCD + DAE, B2 = DAE-restored vs degraded as the contrast. Judge B1 by whether (B1 − B0) > (VCD − baseline), on AUROC and against the matched-threshold baseline, and check that the clean cell doesn't drop.
+
+#### ViewLayer+DAE (2026-11-11; details in `docs/findings.md` and `ViewLayerDAE/README.md`)
+
+- **What it is:** ViewLayer's five views plus the `dae_v1`-restored view, mean Yes−No margin at layer 20. Views, layer, α and threshold are chosen on the 100 DEV images.
+- It started as VCD with a stronger real branch (`(1+α)·views − α·contrast`). DEV picked α = 0, so VCD's contrast is unused; forcing α = 0.25 lowers AUROC on clean and blur.
+- **Result (400 TEST images):** AUROC above the baseline in 26 of 27 cells and above ViewLayer in all 12 noise cells (noise s4 .817 → .833). Blur and clean are unchanged from ViewLayer.
+- **Against the DAE alone:** better on clean, blur and noise s1–s3; at noise s4 the DAE alone is as good or better (.836 vs .833, not significant).
+- Raw records: `$VCD_OUTPUT_ROOT/viewlayer_dae_<kind>_s<level>/` (jobs `26199460`, `26199954`). Tables: `results/viewlayer_dae_*.csv`.
 
 ## Models and benchmarks
 

@@ -145,11 +145,28 @@ def vcd_margin(cell: pd.DataFrame, alpha: float = 1.0, beta: float = 0.1) -> np.
     return m
 
 
+def decision_score(m: np.ndarray, m_real: np.ndarray) -> np.ndarray:
+    """Turn a masked margin (+-inf = answer forced by the plausibility mask) into a ranking score that
+    keeps every decision but orders forced answers by the real-branch margin instead of tying them.
+    The mask forces 60-70% of POPE answers; left as +-inf they all tie, which lowers AUROC even for a
+    method that changes no answer (the baseline with only VCD's mask: 0.750 -> 0.710 at blur s4)."""
+    s = np.asarray(m, float).copy()
+    pos, neg = np.isposinf(s), np.isneginf(s)
+    s[pos] = 1e6 + m_real[pos]
+    s[neg] = -1e6 + m_real[neg]
+    return s
+
+
 def margins(df: pd.DataFrame, n_boot: int, rng: np.random.Generator) -> pd.DataFrame:
     """Does VCD improve discrimination, or only shift the Yes/No threshold? Greedy VCD records only
     (first-token logits). For each cell: AUROC of the real-branch margin (= the baseline's), of the
-    contrast-branch margin, and of the VCD margin; and F1 of the baseline margin thresholded so its
-    yes-ratio matches VCD's ("matched"), i.e. what a pure bias shift would get."""
+    contrast-branch margin, and of VCD; and F1 of the baseline margin thresholded so its yes-ratio
+    matches VCD's ("matched"), i.e. what a pure bias shift would get.
+
+    VCD's AUROC is reported three ways: auroc_vcd ranks VCD's decisions with `decision_score` (the
+    convention of fix_eval/common.py, and the one to quote); auroc_vcd_nomask is the raw contrastive
+    margin before the plausibility mask; auroc_vcd_tied leaves masked answers as +-inf ties (the
+    pre-2026-11-11 number, kept for reference only)."""
     rows = []
     vcd = df[(df["method"] == "vcd") & (df["decoding"] == "greedy")]
     for key, cell in vcd.groupby(KEYS):
@@ -158,6 +175,8 @@ def margins(df: pd.DataFrame, n_boot: int, rng: np.random.Generator) -> pd.DataF
         m = (cell["logit_yes"] - cell["logit_no"]).to_numpy(float)
         m_cd = (cell["logit_yes_cd"] - cell["logit_no_cd"]).to_numpy(float)
         mv = vcd_margin(cell)
+        sv = decision_score(mv, m)
+        mu = 2 * m - m_cd          # unmasked VCD margin at alpha = 1
         yes_vcd = (mv > 0).mean()
 
         def matched_f1(m, mv, gold):
@@ -165,12 +184,16 @@ def margins(df: pd.DataFrame, n_boot: int, rng: np.random.Generator) -> pd.DataF
             return f1_from(m > t, gold)
 
         idx = rng.integers(0, gold.size, size=(n_boot, gold.size))
-        d_auc = np.array([auroc(mv[i], gold[i]) - auroc(m[i], gold[i]) for i in idx])
+        d_auc = np.array([auroc(sv[i], gold[i]) - auroc(m[i], gold[i]) for i in idx])
+        d_auc_nm = np.array([auroc(mu[i], gold[i]) - auroc(m[i], gold[i]) for i in idx])
         d_f1m = np.array([f1_from(mv[i] > 0, gold[i]) - matched_f1(m[i], mv[i], gold[i]) for i in idx])
         row = dict(zip(KEYS, key))
         row.update(
-            auroc_real=auroc(m, gold), auroc_cd=auroc(m_cd, gold), auroc_vcd=auroc(mv, gold),
+            auroc_real=auroc(m, gold), auroc_cd=auroc(m_cd, gold), auroc_vcd=auroc(sv, gold),
             d_auroc_lo=np.percentile(d_auc, 2.5), d_auroc_hi=np.percentile(d_auc, 97.5),
+            auroc_vcd_nomask=auroc(mu, gold),
+            d_auroc_nomask_lo=np.percentile(d_auc_nm, 2.5), d_auroc_nomask_hi=np.percentile(d_auc_nm, 97.5),
+            auroc_vcd_tied=auroc(mv, gold),
             f1_real=f1_from(m > 0, gold), f1_vcd=f1_from(mv > 0, gold), f1_matched=matched_f1(m, mv, gold),
             d_f1_vs_matched_lo=np.percentile(d_f1m, 2.5), d_f1_vs_matched_hi=np.percentile(d_f1m, 97.5),
             yes_real=(m > 0).mean(), yes_vcd=yes_vcd,
@@ -204,7 +227,7 @@ def main():
         print(f"\n== {decoding}: mean over splits (%)\n{view.round(2)}")
     view = diag.groupby(["decoding", "kind", "level"], sort=False)[["mean_abs_dm", "dm_gold_yes", "dm_gold_no", "mean_js"]].mean()
     print(f"\n== VCD contrast diagnostics, mean over splits\n{view.round(4)}")
-    view = marg.groupby(["kind", "level"], sort=False)[["auroc_real", "auroc_cd", "auroc_vcd", "f1_real", "f1_matched", "f1_vcd", "agree_answer"]].mean()
+    view = marg.groupby(["kind", "level"], sort=False)[["auroc_real", "auroc_cd", "auroc_vcd", "auroc_vcd_nomask", "auroc_vcd_tied", "f1_real", "f1_matched", "f1_vcd", "agree_answer"]].mean()
     print(f"\n== greedy first-token margins, mean over splits\n{view.round(4)}")
 
 
