@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+stage2_vcd_sample_seed56_blur_s4,vcd,sample,56,1.0,0.1,999,blur,4,16.0,random,3000,0.69433,0.86032,0.464,0.60286,0.26967,0.0,0.16,2026-11-01T05:35:40
+stage2_vcd_sample_seed56_blur_s4,vcd,sample,56,1.0,0.1,999,blur,4,16.0,popular,3000,0.67,0.7846,0.46867,0.58681,0.29867,0.0,0.16,2026-11-01T05:44:29
+stage2_vcd_sample_seed56_blur_s4,vcd,sample,56,1.0,0.1,999,blur,4,16.0,adversarial,3000,0.62633,0.69356,0.45267,0.5478,0.32633,0.0,0.1599,2026-11-01T05:53:20

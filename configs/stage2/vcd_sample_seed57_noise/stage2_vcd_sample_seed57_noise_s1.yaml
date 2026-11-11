@@ -1,0 +1,7 @@
+name: stage2_vcd_sample_seed57_noise_s1
+method: vcd
+decoding: sample
+seed: 57
+noise_step: 999
+kind: noise
+level: 1

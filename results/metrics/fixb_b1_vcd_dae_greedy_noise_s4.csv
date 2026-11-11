@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,restore,contrast,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+fixb_b1_vcd_dae_greedy_noise_s4,vcd,greedy,55,1.0,0.1,999,dae_v1,diffusion,noise,4,1.0,random,3000,0.768,0.85957,0.64067,0.73415,0.37267,0.0,0.1592,2026-11-02T22:43:33
+fixb_b1_vcd_dae_greedy_noise_s4,vcd,greedy,55,1.0,0.1,999,dae_v1,diffusion,noise,4,1.0,popular,3000,0.72833,0.77204,0.648,0.7046,0.41967,0.0,0.1595,2026-11-02T22:43:33
+fixb_b1_vcd_dae_greedy_noise_s4,vcd,greedy,55,1.0,0.1,999,dae_v1,diffusion,noise,4,1.0,adversarial,3000,0.68567,0.69993,0.65,0.67404,0.46433,0.0,0.1596,2026-11-02T22:43:33

@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+stage0_baseline_greedy,baseline,greedy,55,,,,clean,0,random,3000,0.87067,0.97199,0.76333,0.85512,0.39267,0.0,0.0802,2026-11-01T01:06:53
+stage0_baseline_greedy,baseline,greedy,55,,,,clean,0,popular,3000,0.859,0.94394,0.76333,0.84408,0.40433,0.0,0.0811,2026-11-01T01:11:47
+stage0_baseline_greedy,baseline,greedy,55,,,,clean,0,adversarial,3000,0.83667,0.89453,0.76333,0.82374,0.42667,0.0,0.0807,2026-11-01T01:16:39

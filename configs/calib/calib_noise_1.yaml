@@ -1,0 +1,8 @@
+name: calib_noise_1
+method: baseline
+decoding: greedy
+seed: 55
+kind: noise
+level: 0
+param: 1.0
+limit: 100

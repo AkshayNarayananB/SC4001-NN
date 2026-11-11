@@ -1,0 +1,7 @@
+name: stage1_baseline_greedy_noise_s4
+method: baseline
+decoding: greedy
+seed: 55
+kind: noise
+level: 4
+limit: 100

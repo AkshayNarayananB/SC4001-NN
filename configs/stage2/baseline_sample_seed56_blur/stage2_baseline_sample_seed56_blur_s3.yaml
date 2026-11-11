@@ -1,0 +1,7 @@
+name: stage2_baseline_sample_seed56_blur_s3
+method: baseline
+decoding: sample
+seed: 56
+noise_step: 999
+kind: blur
+level: 3

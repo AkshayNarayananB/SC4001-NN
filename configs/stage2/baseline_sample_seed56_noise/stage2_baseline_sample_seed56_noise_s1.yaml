@@ -1,0 +1,7 @@
+name: stage2_baseline_sample_seed56_noise_s1
+method: baseline
+decoding: sample
+seed: 56
+noise_step: 999
+kind: noise
+level: 1

@@ -32,11 +32,13 @@ def load(prefix: str) -> pd.DataFrame:
     if "param" not in df:
         df["param"] = pd.NA
     df["param"] = df["param"].fillna("")  # '' = the dataset's cached level, a number = on-the-fly sweep
+    for col in ["restore", "contrast"]:  # fix B columns; absent from older metrics files
+        df[col] = df[col].fillna("") if col in df else ""
     return df[df["n"] == df["n"].max()]  # drop smoke/partial runs
 
 
 def summarize(df: pd.DataFrame) -> pd.DataFrame:
-    keys = ["method", "alpha", "beta", "noise_step", "decoding", "kind", "level", "param", "split"]
+    keys = ["method", "alpha", "beta", "noise_step", "restore", "contrast", "decoding", "kind", "level", "param", "split"]
     grouped = df.groupby(keys, dropna=False)  # baseline rows have empty alpha/beta/noise_step
     agg = grouped[METRICS].agg(["mean", "std"]) * 100
     agg.columns = [f"{m}_{s}" for m, s in agg.columns]
@@ -47,9 +49,11 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def label(r) -> str:
+    restore = f"+{r['restore']}" if r["restore"] else ""
     if r["method"] == "baseline":
-        return "baseline"
-    return f"{r['method']}(a={r['alpha']:g},b={r['beta']:g},T={r['noise_step']:g})"
+        return "baseline" + restore
+    contrast = "T=degraded" if r["contrast"] == "degraded" else f"T={r['noise_step']:g}"
+    return f"{r['method']}{restore}(a={r['alpha']:g},b={r['beta']:g},{contrast})"
 
 
 def fmt(mean, std):

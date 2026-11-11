@@ -1,0 +1,5 @@
+name: stage0_vcd_T999_sample_seed56
+method: vcd
+decoding: sample
+seed: 56
+noise_step: 999

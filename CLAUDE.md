@@ -128,6 +128,33 @@ Candidate directions:
 
 Report how each fix changes F1 relative to VCD and to baseline at each severity level, plus its compute cost (number of extra forward passes).
 
+#### Fix B: DAE restoration before the real pass (DAE trained 2026-11-02)
+
+- **What it is:** a small U-Net DAE (`src/fixes/dae.py`, 7.2M params). It restores the degraded image at native resolution, once per image, before LLaVA. Both VCD branches then use the restored image; LLaVA itself is never trained.
+  - Residual output with a zero-initialised last layer, so it starts as the exact identity. 20% of training samples are clean→clean, so it should learn to leave clean images alone.
+- **Data:** COCO **train2014** only (POPE is val2014, so there's no leakage). `scripts/download_coco_train.py` (login node) writes `$VCD_DATA_ROOT/coco_train2014/{images/,train.txt,val.txt}`: 10k train and 100 val images, a seeded shuffle of images with a short side ≥ 320.
+- **Training:** `scripts/train_dae.py` (on ASPIRE, `qsub -v NAME=dae_v1 scripts/pbs/train_dae.pbs`).
+  - Blind model: blur σ ~ U(2, 20) and noise std ~ U(0.1, 1.1), applied with `src.degradations.apply` (same code and uint8 rounding as the POPE images). 256 px crops, L1 loss, 60k steps.
+  - Crops are degraded via a margin-padded region; this was checked to be bit-identical to degrading the full image.
+  - Validation uses held-out train2014 images at the exact test `LEVELS`, reporting PSNR in → out. Outputs go to `$VCD_CHECKPOINT_ROOT/dae/<name>/` (on ASPIRE, `/scratch/users/ntu/c230202/checkpoints`). Same name and args = resume.
+- **Local smoke test (36 images, 600 steps):** noise PSNR +4–5 dB, blur unchanged so far, clean passes through unchanged. **Watch blur in the full run:** noise dominates the L1 loss. If blur stays flat, reweight the loss per sample.
+- **Trained: `dae_v1`** (job `26091677`, 60k steps, 0.036 s/step, about 40 min on an A100). Weights: `/scratch/users/ntu/c230202/checkpoints/dae/dae_v1/best.pt`. Final validation PSNR, degraded → restored:
+  - **Noise:** s1 12.1 → 25.4, s2 9.2 → 23.6, s3 7.8 → 22.4, s4 6.8 → 21.1 dB.
+  - **Blur:** unchanged at every level (identity). Clean images also pass through unchanged.
+  - **Blur at these levels is unrecoverable, not a training bug.** Non-blind Wiener deconvolution given the true σ *lowers* PSNR at every level (−0.02 dB at best for s1, −6 dB for s4). Gaussian σ ≥ 5 removes the detail above ~0.07 cycles/px, below 8-bit precision.
+  - **So Fix B is a noise-only fix.** On blur cells, DAE + baseline = baseline and DAE + VCD = VCD, so run the Fix B variants on the noise cells only.
+- **POPE runs (submitted 2026-11-02):** greedy, noise s1–s4, real branch = `dae_v1`-restored PNGs.
+  - `scripts/make_restored.py` (job `26091951`) writes `pope/images/restored/dae_v1/noise/s*/` plus `pope/restored_dae_v1_manifest.csv`. A local 3-image check gave PSNR +13.5–15 dB, matching validation. At s4 the output looks smooth and painterly, without visible invented objects.
+  - `run_pope.py` keys: `restore: dae_v1` (real-branch input) and `contrast: diffusion|degraded`. `python -m scripts.make_configs fixb` makes 3 groups plus `fixb_smoke`.
+  - Jobs are chained: restore `26091951` → smoke `26091952` → b0/b1/b2 `26091953`–`26091955`. Each step needs the previous one to succeed (`DEPEND=` in `submit.sh`).
+  - Analysis: `python -m scripts.analyze_fixb` (on ASPIRE) → `results/fixb_comparison.csv`, reporting AUROC, matched F1, JS/|dm| and bootstrap CIs for the restore effect, b1 − VCD, and the interaction.
+- **Result (2026-11-02; details in `docs/findings.md`, Phase 2 fix B): restoration works, but as an input fix, not a VCD fix.**
+  - **B0 (baseline + DAE)** is the first intervention to raise AUROC above the baseline (+0.011 / +0.024 / +0.049 / +0.097 for s1–s4). It also beats its matched-threshold baseline (+1.4 to +6.5 F1).
+  - **B1 (VCD + DAE)** has the best F1 (+0.8 to +7.4 over VCD). But AUROC(B1) < AUROC(B0) everywhere, the interaction is ≈ 0, and B0 thresholded to B1's yes-ratio beats B1. So VCD still only recalibrates.
+  - **Restoring the positive doesn't reopen the contrast gap:** B1's JS is slightly *below* VCD's.
+  - **B2 is dominated;** drop it.
+- **Evaluation plan:** variants B0 = baseline + DAE (control), B1 = VCD + DAE, B2 = DAE-restored vs degraded as the contrast. Judge B1 by whether (B1 − B0) > (VCD − baseline), on AUROC and against the matched-threshold baseline, and check that the clean cell doesn't drop.
+
 ## Models and benchmarks
 
 - **Primary model:** LLaVA-1.5-7B (`llava-hf/llava-1.5-7b-hf` via HuggingFace `transformers`). Optional second model: InstructBLIP or Qwen-VL, to check that results generalise.

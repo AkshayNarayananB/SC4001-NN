@@ -1,0 +1,2 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+stage0_smoke,vcd,sample,55,1.0,0.1,500,clean,0,random,30,0.8,0.84615,0.73333,0.78571,0.43333,0.0,0.1774,2026-11-01T00:57:48

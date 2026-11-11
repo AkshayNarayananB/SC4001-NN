@@ -1,0 +1,7 @@
+name: stage1_baseline_greedy_blur_s1
+method: baseline
+decoding: greedy
+seed: 55
+kind: blur
+level: 1
+limit: 100

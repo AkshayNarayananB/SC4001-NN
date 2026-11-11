@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+stage2_vcd_greedy_noise_s1,vcd,greedy,55,1.0,0.1,999,noise,1,0.3,random,3000,0.85567,0.91647,0.78267,0.8443,0.427,0.0,0.1576,2026-11-01T03:57:14
+stage2_vcd_greedy_noise_s1,vcd,greedy,55,1.0,0.1,999,noise,1,0.3,popular,3000,0.835,0.8725,0.78467,0.82625,0.44967,0.0,0.157,2026-11-01T04:05:56
+stage2_vcd_greedy_noise_s1,vcd,greedy,55,1.0,0.1,999,noise,1,0.3,adversarial,3000,0.77967,0.77653,0.78533,0.78091,0.50567,0.0,0.1559,2026-11-01T04:14:38

@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+stage0_baseline_sample_seed55,baseline,sample,55,,,,clean,0,random,3000,0.83133,0.92262,0.72333,0.81091,0.392,0.002,0.079,2026-11-01T01:06:29
+stage0_baseline_sample_seed55,baseline,sample,55,,,,clean,0,popular,3000,0.814,0.88734,0.71933,0.79455,0.40533,0.001,0.0786,2026-11-01T01:11:14
+stage0_baseline_sample_seed55,baseline,sample,55,,,,clean,0,adversarial,3000,0.794,0.83409,0.734,0.78085,0.44,0.00233,0.0788,2026-11-01T01:16:00

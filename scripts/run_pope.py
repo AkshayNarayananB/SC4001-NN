@@ -4,6 +4,13 @@
 
 Per-question records go to $VCD_OUTPUT_ROOT/<name>/<split>.jsonl (resumable: finished question
 ids are skipped). Per-split metrics go to results/metrics/<name>.csv.
+
+Optional Phase 2 fix B keys (absent from DEFAULTS, so older configs and run dirs are unchanged):
+  restore: <DAE run name>   the real branch sees the restored image (scripts/make_restored.py)
+                            instead of the degraded one
+  contrast: diffusion       (default) the contrast branch is the real-branch input + diffusion noise
+  contrast: degraded        the contrast branch is the original degraded image, no diffusion noise
+                            (needs restore: contrasts restored against degraded)
 """
 import argparse
 import csv
@@ -25,7 +32,7 @@ from src.decode import METHODS, generate
 from src.eval_pope import pope_metrics
 from src.model import answer_token_ids, encode, load_model
 from src.degradations import LEVELS, apply
-from src.paths import REPO_ROOT, degraded_image_path, pope_question_file
+from src.paths import REPO_ROOT, degraded_image_path, pope_question_file, restored_image_path
 from src.vcd import add_diffusion_noise
 
 OUTPUT_ROOT = Path(os.environ.get("VCD_OUTPUT_ROOT", REPO_ROOT / "results" / "raw"))
@@ -44,6 +51,11 @@ def load_config(path: str) -> dict:
     with open(path) as f:
         cfg = {**DEFAULTS, **yaml.safe_load(f)}
     assert "name" in cfg, "config needs a unique 'name'"
+    assert cfg.get("contrast", "diffusion") in ("diffusion", "degraded"), cfg.get("contrast")
+    if cfg.get("contrast") == "degraded":
+        assert cfg.get("restore"), "contrast: degraded needs restore (the contrast would equal the input)"
+    if cfg.get("restore"):
+        assert cfg["kind"] != "clean" and cfg.get("param") is None, "restore needs a cached degraded level"
     if cfg.get("param") is None and cfg["kind"] != "clean":
         # Record the cached level's actual parameter, so a run dir made under different LEVELS
         # fails the config check in prepare_run_dir instead of being silently resumed.
@@ -86,6 +98,14 @@ def load_image(cfg, image_name: str) -> Image.Image:
     return apply(clean, cfg["kind"], cfg["param"], zlib.crc32(f"{image_name}|{cfg['kind']}|{cfg['param']}".encode()))
 
 
+def load_real_image(cfg, image_name: str) -> Image.Image:
+    """The real-branch input: the restored image if the config sets `restore`, else the degraded one."""
+    if cfg.get("restore"):
+        path = restored_image_path(image_name, cfg["restore"], cfg["kind"], cfg["level"])
+        return Image.open(path).convert("RGB")
+    return load_image(cfg, image_name)
+
+
 def select_questions(questions: list[dict], limit: int | None) -> list[dict]:
     """All questions, or a fixed random subset of `limit` of them. The subset seed is constant,
     not the run seed, so every method and degradation level sees the same questions. A random
@@ -113,14 +133,17 @@ def run_split(cfg, split, model, processor, method, answer_ids, run_dir) -> list
         for q in tqdm(questions, desc=split, mininterval=30):
             if q["question_id"] in done:
                 continue
-            image = load_image(cfg, q["image"])
+            image = load_real_image(cfg, q["image"])
             input_ids, pixel_values = encode(processor, image, q["text"])
-            # Noise depends only on (seed, split, question), so every degradation level of the
-            # same question gets the same eps: paired comparisons across conditions.
-            pixel_values_cd = (
-                add_diffusion_noise(pixel_values, cfg["noise_step"], seeded_generator(cfg["seed"], split, q["question_id"], "noise"))
-                if method.needs_contrast else None
-            )
+            if not method.needs_contrast:
+                pixel_values_cd = None
+            elif cfg.get("contrast", "diffusion") == "degraded":
+                pixel_values_cd = encode(processor, load_image(cfg, q["image"]), q["text"])[1]
+            else:
+                # Noise depends only on (seed, split, question), so every degradation level of the
+                # same question gets the same eps: paired comparisons across conditions.
+                pixel_values_cd = add_diffusion_noise(
+                    pixel_values, cfg["noise_step"], seeded_generator(cfg["seed"], split, q["question_id"], "noise"))
             t0 = time.perf_counter()
             tokens, diag = generate(
                 model, input_ids, pixel_values, pixel_values_cd, method,
@@ -160,7 +183,9 @@ def run_config(cfg, model, processor, answer_ids):
             "name": cfg["name"], "method": cfg["method"], "decoding": cfg["decoding"], "seed": cfg["seed"],
             "alpha": cfg["alpha"] if cfg["method"] != "baseline" else "",
             "beta": cfg["beta"] if cfg["method"] != "baseline" else "",
-            "noise_step": cfg["noise_step"] if cfg["method"] != "baseline" else "",
+            "noise_step": cfg["noise_step"] if cfg["method"] != "baseline" and cfg.get("contrast") != "degraded" else "",
+            "restore": cfg.get("restore") or "",
+            "contrast": cfg.get("contrast", "diffusion") if cfg["method"] != "baseline" else "",
             "kind": cfg["kind"], "level": cfg["level"], "param": cfg.get("param", cfg.get("level_param", "")), "split": split,
             **{k: round(v, 5) if isinstance(v, float) else v for k, v in metrics.items()},
             "sec_per_q": round(np.mean([r["seconds"] for r in records]), 4),

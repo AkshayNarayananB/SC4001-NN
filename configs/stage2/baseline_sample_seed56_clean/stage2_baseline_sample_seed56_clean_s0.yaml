@@ -1,0 +1,7 @@
+name: stage2_baseline_sample_seed56_clean_s0
+method: baseline
+decoding: sample
+seed: 56
+noise_step: 999
+kind: clean
+level: 0

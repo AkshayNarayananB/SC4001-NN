@@ -1,0 +1,8 @@
+name: calib_blur_7
+method: baseline
+decoding: greedy
+seed: 55
+kind: blur
+level: 0
+param: 7
+limit: 100

@@ -1,0 +1,7 @@
+name: stage1_baseline_greedy_clean_s0
+method: baseline
+decoding: greedy
+seed: 55
+kind: clean
+level: 0
+limit: 100

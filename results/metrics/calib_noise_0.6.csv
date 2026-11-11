@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+calib_noise_0.6,baseline,greedy,55,,,,noise,0,0.6,random,100,0.74,1.0,0.52727,0.69048,0.29,0.0,0.0775,2026-11-01T02:28:02
+calib_noise_0.6,baseline,greedy,55,,,,noise,0,0.6,popular,100,0.74,1.0,0.52727,0.69048,0.29,0.0,0.0788,2026-11-01T02:28:13
+calib_noise_0.6,baseline,greedy,55,,,,noise,0,0.6,adversarial,100,0.69,0.85294,0.52727,0.65169,0.34,0.0,0.0791,2026-11-01T02:28:24

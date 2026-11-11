@@ -1,0 +1,7 @@
+name: stage1_baseline_greedy_noise_s3
+method: baseline
+decoding: greedy
+seed: 55
+kind: noise
+level: 3
+limit: 100

@@ -1,0 +1,7 @@
+name: stage0_smoke
+method: vcd
+decoding: sample
+seed: 55
+splits:
+- random
+limit: 30

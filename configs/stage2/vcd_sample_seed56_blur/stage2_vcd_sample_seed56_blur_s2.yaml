@@ -1,0 +1,7 @@
+name: stage2_vcd_sample_seed56_blur_s2
+method: vcd
+decoding: sample
+seed: 56
+noise_step: 999
+kind: blur
+level: 2

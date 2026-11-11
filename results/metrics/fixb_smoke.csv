@@ -1,0 +1,2 @@
+name,method,decoding,seed,alpha,beta,noise_step,restore,contrast,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+fixb_smoke,vcd,greedy,55,1.0,0.1,,dae_v1,degraded,noise,4,1.0,random,30,0.63333,0.84615,0.55,0.66667,0.43333,0.0,0.2197,2026-11-02T20:01:51

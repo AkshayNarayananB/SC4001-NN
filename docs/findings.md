@@ -245,3 +245,61 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
 - Fixes aimed at making the negative "blinder" (degradation-aware T, blank image, text-only prior) are cheap to test offline first:
   - Run only the contrast branch, log its margin, and recompute AUROC and F1 from the stored real-branch logits.
   - The real branch is already logged for every question.
+
+## Phase 2, fix B: DAE restoration before decoding (2026-11-02)
+
+**Setup**
+- **DAE:** `dae_v1`, a 7.2M-param U-Net trained on COCO train2014 (job `26091677`, 60k steps). Final validation PSNR, degraded → restored: noise s1–s4 12.1/9.2/7.8/6.8 → 25.4/23.6/22.4/21.1 dB.
+- **Blur is left unchanged at every level**, and that's not a training bug: non-blind Wiener deconvolution given the true σ *lowers* PSNR at every level. Fix B is therefore evaluated on noise only.
+- **Restored POPE images:** `pope/images/restored/dae_v1/noise/` (job `26092158`), with the same PSNR gains as validation.
+- **Runs:** greedy, full splits, noise s1–s4 (jobs `26092160`–`26092162`).
+  - **B0:** baseline on the restored image.
+  - **B1:** VCD on the restored image (contrast = restored + diffusion noise, T=999).
+  - **B2:** VCD contrasting the restored image against the original degraded image.
+- **Comparison:** against the Stage 2 greedy baseline and VCD on the same questions. Analysis: `python -m scripts.analyze_fixb` → `results/fixb_comparison.csv`.
+
+### Results: mean over the 3 splits
+
+| Noise level | AUROC base / VCD / **B0** / B1 / B2 | F1 base / VCD / **B0** / B1 / B2 | Yes-ratio base / VCD / B0 / B1 / B2 |
+|---|---|---|---|
+| s1 | .911 / .889 / **.922** / .898 / .895 | 76.1 / 81.7 / 80.0 / **82.9** / 79.5 | 34.6 / 46.1 / 37.4 / 46.7 / 39.8 |
+| s2 | .878 / .851 / **.902** / .873 / .868 | 69.6 / 78.1 / 74.6 / **78.9** / 75.5 | 30.3 / 46.0 / 34.4 / 44.9 / 39.1 |
+| s3 | .826 / .796 / **.875** / .847 / .841 | 57.6 / 72.9 / 69.2 / **75.7** / 72.8 | 23.5 / 44.0 / 31.6 / 43.7 / 38.8 |
+| s4 | .736 / .707 / **.833** / .800 / .798 | 43.0 / 63.1 / 61.0 / **70.5** / 67.9 | 16.8 / 38.9 / 26.8 / 41.9 / 38.3 |
+
+**Matched-threshold controls (F1, %)**
+
+| Noise level | B0 | Baseline at B0's yes-ratio | B1 | **B0 at B1's yes-ratio** |
+|---|---|---|---|---|
+| s1 | 80.0 | 78.6 | 82.9 | **83.8** |
+| s2 | 74.6 | 73.0 | 78.9 | **80.6** |
+| s3 | 69.2 | 65.4 | 75.7 | **77.1** |
+| s4 | 61.0 | 54.5 | 70.5 | **71.7** |
+
+**Contrast size (VCD → B1 → B2)**
+- JS: .132/.131/.113/.083 → .120/.110/.099/.082 → .014/.024/.040/.052.
+- Mean |dm|: 2.56/2.56/2.41/2.13 → 2.40/2.26/2.11/1.88 → 0.63/0.88/1.19/1.42.
+
+### Findings
+
+1. **Restoration alone (B0) is the first intervention that improves discrimination, not just calibration.**
+   - AUROC rises above the baseline at every level, by +0.011 / +0.024 / +0.049 / +0.097 (s1–s4), and the gain grows with severity.
+   - The 95% CI is above zero in all 12 (level, split) cells.
+   - B0 beats the baseline thresholded to B0's yes-ratio by +1.4 / +1.6 / +3.8 / +6.5 F1.
+   - VCD never cleared either bar in Stage 2.
+2. **VCD on top of restoration (B1) gives the best F1, but VCD's own contribution is still only a threshold shift.**
+   - B1 has the highest F1 at every level: +1.2 / +0.8 / +2.8 / +7.4 over VCD.
+   - But AUROC(B1) < AUROC(B0) everywhere. VCD costs about the same AUROC on a restored input (−0.024 to −0.033) as on a degraded one (−0.022 to −0.030), so the interaction is ≈ 0: −0.004 to +0.002 on average, and the CI includes zero in all 12 cells.
+   - Against the baseline, B1's AUROC is higher at s3–s4 (CI > 0 in all 6 cells) and lower at s1 (CI < 0 in 2 of 3 cells).
+   - B0 thresholded to B1's yes-ratio beats B1 by +0.9 to +1.7 F1.
+   - **B1's gain over VCD therefore comes entirely from restoration.** The honest description is "restore before decoding", with VCD as an optional recalibration. It is not a fix to VCD's contrast.
+3. **A cleaner positive does not reopen the contrast gap.** B1's JS and |dm| are slightly *smaller* than VCD's. The "converging branches" problem from Stage 2 isn't caused by the positive branch being degraded; it's the T=999 negative that dominates.
+4. **B2 (restored vs degraded as the contrast) is dominated.** Its contrast is small (JS 0.01–0.05), its AUROC is below B0's, and its F1 is below B1's. Drop it.
+5. **Cost:** one DAE forward pass per image (7.2M params, negligible next to the 7B LLM) and no extra LLM forward passes. B0 costs the same as the baseline; B1 costs the same as VCD.
+
+### Implications
+- For the report: Fix B works, but as an **input fix that helps any decoder**. VCD's degraded-input problem is better described as "VCD only recalibrates, and restoration supplies the missing information".
+- Blur can't be helped by restoration at these levels, so blur cells need a different fix: decoding-side (Fix A) or recalibration.
+- Optional follow-ups:
+  - B0/B1 with sampling seeds 55/56/57, for the sampling table.
+  - The clean-image cell, to confirm that an always-on DAE doesn't hurt clean images. Validation passed clean images through exactly unchanged, so the POPE result should be identical to the baseline.

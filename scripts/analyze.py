@@ -47,8 +47,9 @@ def load_records(stage: str) -> pd.DataFrame:
             if set(df["question_id"]) != expected_ids(split, cfg["limit"]):
                 print(f"partial {cfg['name']}/{split} ({len(df)} records)")
                 continue
-            df = df.assign(method=cfg["method"], decoding=cfg["decoding"], seed=cfg["seed"],
-                           kind=cfg["kind"], level=cfg["level"], split=split)
+            df = df.assign(name=cfg["name"], method=cfg["method"], decoding=cfg["decoding"], seed=cfg["seed"],
+                           kind=cfg["kind"], level=cfg["level"], split=split, limit=cfg["limit"],
+                           restore=cfg.get("restore") or "", contrast=cfg.get("contrast", "diffusion"))
             frames.append(df)
     df = pd.concat(frames, ignore_index=True)
     df["correct"] = [is_correct_reference(l, a) for l, a in zip(df["label"], df["answer"])]

@@ -1,0 +1,7 @@
+name: stage2_baseline_greedy_clean_s0
+method: baseline
+decoding: greedy
+seed: 55
+noise_step: 999
+kind: clean
+level: 0

@@ -6,7 +6,8 @@ __pycache__/
 data/
 checkpoints/
 hf_cache/
-results/
 *.log
-pbs/
-configs/
+
+# results/: small metric tables are tracked; raw per-question outputs stay on ASPIRE scratch
+results/raw/
+results/**/*.jsonl

@@ -72,7 +72,29 @@ def stage2() -> list[dict]:
     return configs
 
 
-STAGES = {"stage0": stage0, "stage1": stage1, "calib": calib, "stage2": stage2}
+def fixb() -> list[dict]:
+    """Phase 2 fix B: the DAE-restored image as the real-branch input. Greedy, noise levels only
+    (dae_v1 leaves blurred images unchanged). Compare against the stage2 greedy runs on the same cells.
+      b0: baseline on the restored image (control: what restoration alone does)
+      b1: VCD on the restored image (contrast = restored + diffusion noise, T=999)
+      b2: VCD contrasting the restored image against the original degraded image
+    One job per variant."""
+    variants = {
+        "b0_baseline_dae": dict(method="baseline"),
+        "b1_vcd_dae": dict(method="vcd", contrast="diffusion"),
+        "b2_vcd_dae_vs_degraded": dict(method="vcd", contrast="degraded"),
+    }
+    configs = [
+        dict(name=f"fixb_{tag}_greedy_noise_s{level}", decoding="greedy", seed=55, noise_step=999,
+             kind="noise", level=level, restore="dae_v1", **variant, _group=f"{tag}_greedy")
+        for tag, variant in variants.items() for level in range(1, len(LEVELS["noise"]) + 1)
+    ]
+    configs.append(dict(name="fixb_smoke", method="vcd", decoding="greedy", seed=55, noise_step=999, kind="noise",
+                        level=4, restore="dae_v1", contrast="degraded", splits=["random"], limit=30))
+    return configs
+
+
+STAGES = {"stage0": stage0, "stage1": stage1, "calib": calib, "stage2": stage2, "fixb": fixb}
 
 
 def main():

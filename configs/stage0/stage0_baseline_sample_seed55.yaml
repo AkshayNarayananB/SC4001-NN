@@ -1,0 +1,5 @@
+name: stage0_baseline_sample_seed55
+method: baseline
+decoding: sample
+seed: 55
+noise_step: 500

@@ -1,0 +1,5 @@
+name: stage0_vcd_sample_seed55
+method: vcd
+decoding: sample
+seed: 55
+noise_step: 500

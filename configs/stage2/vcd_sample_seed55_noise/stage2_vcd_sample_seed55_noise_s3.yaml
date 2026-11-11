@@ -1,0 +1,7 @@
+name: stage2_vcd_sample_seed55_noise_s3
+method: vcd
+decoding: sample
+seed: 55
+noise_step: 999
+kind: noise
+level: 3

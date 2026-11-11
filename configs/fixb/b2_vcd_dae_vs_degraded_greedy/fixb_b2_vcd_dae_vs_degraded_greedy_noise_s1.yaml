@@ -1,0 +1,9 @@
+name: fixb_b2_vcd_dae_vs_degraded_greedy_noise_s1
+decoding: greedy
+seed: 55
+noise_step: 999
+kind: noise
+level: 1
+restore: dae_v1
+method: vcd
+contrast: degraded

@@ -1,0 +1,5 @@
+name: stage0_vcd_T999_greedy
+method: vcd
+decoding: greedy
+seed: 55
+noise_step: 999

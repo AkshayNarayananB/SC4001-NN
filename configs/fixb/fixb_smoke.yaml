@@ -1,0 +1,12 @@
+name: fixb_smoke
+method: vcd
+decoding: greedy
+seed: 55
+noise_step: 999
+kind: noise
+level: 4
+restore: dae_v1
+contrast: degraded
+splits:
+- random
+limit: 30

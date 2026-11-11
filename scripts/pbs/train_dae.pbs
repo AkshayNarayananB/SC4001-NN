@@ -1,0 +1,23 @@
+#!/bin/bash
+# Train the DAE (Phase 2, fix B). Resubmitting with the same NAME and ARGS resumes from last.pt;
+# changed ARGS need a new NAME (train_dae.py refuses to resume under a different config).
+#   qsub -v NAME=dae_v1 scripts/pbs/train_dae.pbs
+#   qsub -v NAME=dae_v1_long,ARGS="--steps 80000" scripts/pbs/train_dae.pbs
+#PBS -N train-dae
+#PBS -P personal-c230202
+#PBS -q normal
+#PBS -l select=1:ncpus=16:ngpus=1:mem=64gb
+#PBS -l walltime=04:00:00
+#PBS -j oe
+#PBS -o /scratch/users/ntu/c230202/logs/
+
+cd $PBS_O_WORKDIR
+module load miniforge3/25.3.1
+eval "$(conda shell.bash hook)"
+conda activate $HOME/envs/vcd
+
+export VCD_DATA_ROOT=/scratch/users/ntu/c230202/data
+export VCD_CHECKPOINT_ROOT=/scratch/users/ntu/c230202/checkpoints
+
+nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
+python -m scripts.train_dae --name "${NAME:-dae_v1}" --workers 15 ${ARGS:-}

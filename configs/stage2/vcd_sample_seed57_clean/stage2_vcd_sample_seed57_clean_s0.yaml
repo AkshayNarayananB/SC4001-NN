@@ -1,0 +1,7 @@
+name: stage2_vcd_sample_seed57_clean_s0
+method: vcd
+decoding: sample
+seed: 57
+noise_step: 999
+kind: clean
+level: 0
