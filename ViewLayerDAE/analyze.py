@@ -20,6 +20,8 @@ Reported on TEST (fix_eval scoring, 95% paired-bootstrap CIs):
     viewlayer        a = 0, no DAE view                        (reproduces ViewLayer/README.md)
     forced_contrast  a > 0, free V and L                       (what the contrast does when it must be used)
     vcd_layer        V = {orig}, a > 0                         (plain VCD without the mask, read at layer L)
+    dae_only         V = {dae}, a = 0, best L                  (the DAE view alone, read at a middle layer)
+    dae_final        V = {dae}, a = 0, L = 32                  (Fix B's B0: the baseline on the restored image)
     + the baseline with its own DEV-tuned threshold.
 """
 import argparse
@@ -41,7 +43,8 @@ LAYERS = range(12, 33)
 ALPHAS = (0.0, 0.25, 0.5, 1.0, 2.0)
 FINAL = 32
 LABELS = {"vl_dae": "ViewLayer+DAE", "no_contrast": "no-contrast", "viewlayer": "ViewLayer",
-          "forced_contrast": "forced-contrast", "vcd_layer": "VCD@layer"}
+          "forced_contrast": "forced-contrast", "vcd_layer": "VCD@layer", "dae_only": "DAE-only",
+          "dae_final": "DAE@L32"}
 
 
 def score(M: dict, views, layer: int, alpha: float) -> np.ndarray:
@@ -82,6 +85,8 @@ def select(sweep: pd.DataFrame) -> dict:
         "viewlayer": pick(sweep[(sweep["alpha"] == 0) & ~has_dae]),
         "forced_contrast": pick(sweep[sweep["alpha"] > 0]),
         "vcd_layer": pick(sweep[(sweep["alpha"] > 0) & (sweep["views"] == "orig")]),
+        "dae_only": pick(sweep[(sweep["alpha"] == 0) & (sweep["views"] == "dae")]),
+        "dae_final": pick(sweep[(sweep["alpha"] == 0) & (sweep["views"] == "dae") & (sweep["layer"] == FINAL)]),
         "baseline_devthr": pick(sweep[(sweep["alpha"] == 0) & (sweep["views"] == "orig") & (sweep["layer"] == FINAL)]),
     }
 
@@ -153,7 +158,7 @@ def main():
             row[f"{k}_f1_vs_base_devthr"] = f1_from(y[k], gold) - row["f1_base_devthr"]
         # paired bootstrap: is ViewLayer+DAE better than its own fallbacks?
         idx = rng.integers(0, len(t), size=(args.boot, len(t)))
-        for ref in ("viewlayer", "no_contrast"):
+        for ref in ("viewlayer", "no_contrast", "dae_only", "dae_final"):
             d = np.array([auroc(s["vl_dae"][i], gold[i]) - auroc(s[ref][i], gold[i]) for i in idx])
             row[f"vl_dae_d_auroc_{ref}_lo"], row[f"vl_dae_d_auroc_{ref}_hi"] = np.percentile(d, [2.5, 97.5])
         comp.append(row)
@@ -163,11 +168,11 @@ def main():
     # ---------------- README
     by = comp.groupby(["kind", "level"], sort=False).mean(numeric_only=True)
     cond = lambda kind, level: "clean" if kind == "clean" else f"{kind} s{level}"
-    head = ["| condition | AUROC baseline | AUROC VCD | AUROC ViewLayer | AUROC no-contrast | AUROC ViewLayer+DAE "
+    head = ["| condition | AUROC baseline | AUROC VCD | AUROC DAE@L32 | AUROC ViewLayer | AUROC ViewLayer+DAE "
             "| F1 baseline (DEV thr) | F1 VCD | F1 ViewLayer | F1 ViewLayer+DAE | yes% ViewLayer+DAE |", "|---|" + "---|" * 10]
     for (kind, level), r in by.iterrows():
-        head.append(f"| {cond(kind, level)} | {r['auroc_base']:.3f} | {r['auroc_vcd']:.3f} | {r['viewlayer_auroc']:.3f} "
-                    f"| {r['no_contrast_auroc']:.3f} | **{r['vl_dae_auroc']:.3f}** | {100 * r['f1_base_devthr']:.1f} "
+        head.append(f"| {cond(kind, level)} | {r['auroc_base']:.3f} | {r['auroc_vcd']:.3f} | {r['dae_final_auroc']:.3f} | {r['viewlayer_auroc']:.3f} "
+                    f"| **{r['vl_dae_auroc']:.3f}** | {100 * r['f1_base_devthr']:.1f} "
                     f"| {100 * r['f1_vcd']:.1f} | {100 * r['viewlayer_f1']:.1f} | **{100 * r['vl_dae_f1']:.1f}** "
                     f"| {100 * r['vl_dae_yes']:.1f} |")
     gain = lambda k: (comp[f"{k}_auroc"] - comp["auroc_base"]).mean()
@@ -184,10 +189,13 @@ def main():
         "### What DEV selected (one global choice for all conditions)", sel, verdict,
         "### Head to head (TEST)", "\n".join(head),
         f"Mean TEST AUROC gain over the baseline: ViewLayer+DAE {gain('vl_dae'):+.4f}, no-contrast {gain('no_contrast'):+.4f}, "
-        f"ViewLayer {gain('viewlayer'):+.4f}, forced-contrast {gain('forced_contrast'):+.4f}, VCD@layer {gain('vcd_layer'):+.4f}.",
+        f"ViewLayer {gain('viewlayer'):+.4f}, forced-contrast {gain('forced_contrast'):+.4f}, VCD@layer {gain('vcd_layer'):+.4f}, "
+        f"DAE-only {gain('dae_only'):+.4f}, DAE@L32 {gain('dae_final'):+.4f}.",
         f"Out of {len(comp)} cells (95% paired-bootstrap CIs), ViewLayer+DAE's AUROC is above ViewLayer's in "
         f"**{wins('viewlayer')[0]}** and below in {wins('viewlayer')[1]}; above the no-contrast variant's in "
-        f"**{wins('no_contrast')[0]}** and below in {wins('no_contrast')[1]}.",
+        f"**{wins('no_contrast')[0]}** and below in {wins('no_contrast')[1]}; above the DAE view alone at layer 32 "
+        f"(Fix B's B0) in **{wins('dae_final')[0]}** and below in {wins('dae_final')[1]}; above the DAE view alone at its "
+        f"best layer in **{wins('dae_only')[0]}** and below in {wins('dae_only')[1]}.",
         f"Mean TEST F1 difference ViewLayer+DAE − baseline (DEV thr): {100 * comp['vl_dae_f1_vs_base_devthr'].mean():+.2f} points.",
         *[part for k, label in LABELS.items()
           for part in (f"### {label}: {name(*variants[k][:3])}", summarise(comp, f"{k}_", label))],

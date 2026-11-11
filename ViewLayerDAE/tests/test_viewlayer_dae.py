@@ -55,6 +55,7 @@ def test_selection_variants_respect_their_search_spaces():
     assert v["no_contrast"][2] == 0 and v["viewlayer"][2] == 0 and "dae" not in v["viewlayer"][0]
     assert v["forced_contrast"][2] > 0 and v["vcd_layer"][2] > 0 and v["vcd_layer"][0] == ("orig",)
     assert v["baseline_devthr"][:3] == (("orig",), 32, 0.0)
+    assert v["dae_only"][0] == ("dae",) and v["dae_final"][:3] == (("dae",), 32, 0.0)
 
 
 def test_best_threshold_separates():

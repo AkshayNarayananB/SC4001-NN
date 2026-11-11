@@ -5,7 +5,7 @@ References come from the Stage 2 greedy runs (already on ASPIRE): baseline answe
 (T=999, alpha=1, beta=0.1), and the real-branch / VCD-contrast first-token Yes/No logits.
 
 Bars a fix has to clear (set by Stage 2, docs/findings.md):
-  1. AUROC above the baseline's (VCD is below it in every cell)
+  1. AUROC above the baseline's (VCD's is above it in only 1 of 27 cells)
   2. F1 above the matched-threshold baseline (baseline thresholded to the fix's own yes-ratio), i.e.
      the gain is not just a Yes/No bias shift
 
@@ -28,7 +28,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from scripts.analyze import auroc
+from scripts.analyze import auroc, decision_score
 from scripts.analyze import f1_from as _f1_from
 
 from src.paths import POPE_SPLITS, REPO_ROOT
@@ -113,16 +113,6 @@ def vcd_margin(df: pd.DataFrame, alpha: float = 1.0, beta: float = BETA) -> np.n
     m[(df["logprob_no"] < cut).to_numpy()] = np.inf
     m[(df["logprob_yes"] < cut).to_numpy()] = -np.inf
     return m
-
-
-def decision_score(m: np.ndarray, m_real: np.ndarray) -> np.ndarray:
-    """Turn a masked margin (+-inf = answer forced by the mask) into a ranking score that keeps every
-    decision but orders forced answers by the real-branch margin instead of tying them."""
-    s = np.asarray(m, float).copy()
-    pos, neg = np.isposinf(s), np.isneginf(s)
-    s[pos] = 1e6 + m_real[pos]
-    s[neg] = -1e6 + m_real[neg]
-    return s
 
 
 def vcd_margin_unmasked(df: pd.DataFrame, alpha: float = 1.0) -> np.ndarray:

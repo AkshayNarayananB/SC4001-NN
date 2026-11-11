@@ -180,6 +180,7 @@ Recall is identical across splits because the three splits share the same "yes" 
   - `results/stage2_comparison.csv`: per-split F1 / accuracy / yes-ratio, with a paired-bootstrap 95% CI on ΔF1, VCD fixes vs breaks, and McNemar p for greedy.
   - `results/stage2_diagnostics.csv`: the contrast term.
   - `results/stage2_margins.csv`: AUROC and the matched-threshold control.
+- **AUROC scoring corrected 2026-11-11.** The first version scored answers forced by VCD's plausibility mask as ±∞, which ties 60–70% of the questions and lowers AUROC even when no answer changes. They are now ranked by the real-branch margin (`decision_score` in `scripts/analyze.py`, the same convention as `fix_eval/common.py`). The old numbers are kept in the `auroc_vcd_tied` column.
 - **Status:** complete. All 72 runs finished: greedy, plus sampling with 3 seeds in every cell.
 
 ### Results: mean over the 3 splits (%)
@@ -203,33 +204,37 @@ Every degraded cell has a ΔF1 CI above zero. Clean greedy reproduces Stage 0: +
 
 Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is recomputed from the logged logits, including the plausibility mask; it agrees with the decoded answer on ≥99.96% of questions.
 - **AUROC:** how well a margin separates present from absent objects, independent of where the threshold sits.
+  - **AUROC VCD:** VCD's actual decisions, with mask-forced answers ranked by the real-branch margin.
+  - **AUROC VCD unmasked:** the raw contrastive margin `2·real − contrast`, before the plausibility mask.
 - **"Matched":** the baseline margin, thresholded so its yes-ratio equals VCD's. In other words, a pure bias shift with no contrast at all.
 
-| Condition | AUROC real (= baseline) | AUROC contrast branch | AUROC VCD | F1 baseline | F1 matched | F1 VCD |
-|---|---|---|---|---|---|---|
-| Clean | .938 | .694 | .921 | 84.1 | 86.3 | 85.3 |
-| Blur s1 | .907 | .579 | .884 | 75.1 | 82.8 | 82.1 |
-| Blur s2 | .881 | .555 | .855 | 70.0 | 79.5 | 79.3 |
-| Blur s3 | .838 | .535 | .800 | 60.3 | 73.1 | 72.7 |
-| Blur s4 | .754 | .508 | .708 | 40.3 | 59.9 | 59.7 |
-| Noise s1 | .911 | .607 | .889 | 76.1 | 82.6 | 81.7 |
-| Noise s2 | .878 | .529 | .851 | 69.6 | 78.9 | 78.1 |
-| Noise s3 | .826 | .482 | .796 | 57.6 | 73.0 | 72.9 |
-| Noise s4 | .736 | .459 | .708 | 43.0 | 63.4 | 63.1 |
+| Condition | AUROC real (= baseline) | AUROC contrast branch | AUROC VCD | AUROC VCD unmasked | F1 baseline | F1 matched | F1 VCD |
+|---|---|---|---|---|---|---|---|
+| Clean | .938 | .694 | .933 | .922 | 84.1 | 86.3 | 85.3 |
+| Blur s1 | .907 | .579 | .905 | .897 | 75.1 | 82.8 | 82.1 |
+| Blur s2 | .881 | .555 | .878 | .874 | 70.0 | 79.5 | 79.3 |
+| Blur s3 | .838 | .535 | .836 | .834 | 60.3 | 73.1 | 72.7 |
+| Blur s4 | .754 | .508 | .753 | .758 | 40.3 | 59.9 | 59.7 |
+| Noise s1 | .911 | .607 | .907 | .899 | 76.1 | 82.6 | 81.7 |
+| Noise s2 | .878 | .528 | .875 | .871 | 69.6 | 78.9 | 78.1 |
+| Noise s3 | .826 | .481 | .823 | .827 | 57.6 | 73.0 | 72.9 |
+| Noise s4 | .736 | .459 | .735 | .744 | 43.0 | 63.4 | 63.1 |
 
 ### Findings
 
 1. **The hypothesis is refuted as stated: VCD's F1 gain *grows* with severity.** Greedy goes from +1.2 (clean) to +19.5 (blur s4) and +20.1 (noise s4), and sampling shows the same trend. Every degraded cell is significant: paired-bootstrap CI > 0, and McNemar p < 0.05 in 21 of 24 greedy cells; the exceptions are adversarial at blur s1, noise s1 and noise s2.
 
 2. **The gain is entirely a Yes/No threshold shift, not better discrimination.**
-   - VCD *lowers* AUROC in all 27 cells: by −0.016 to −0.054, with every 95% CI below zero. The drop gets bigger with blur severity (−0.017 clean → −0.046 blur s4).
+   - VCD does not raise AUROC. Its decisions rank within −0.006 to +0.002 of the baseline: the 95% CI is below zero in 21 of 27 cells and above zero in one (noise s4, random, +0.002).
+   - The first version of this analysis reported a drop of −0.016 to −0.054. Most of that was the tie artifact described above, not a loss of discrimination.
    - A baseline that simply moves its threshold to VCD's yes-ratio matches or beats VCD's F1 everywhere. VCD − matched ranges from −1.4 to +0.7 F1; the CI excludes zero only on the negative side (12 of 27 cells) and never on the positive side.
    - On POPE, VCD acts as a recalibration toward "yes". It is worth the most where degradation has pushed the baseline furthest toward "no" (Stage 1: precision stays at ~90% while recall collapses), and that is why its gain scales with severity.
 
-3. **The contrast branch isn't "blind" on clean images, so subtracting it removes real signal.**
+3. **The contrast branch isn't "blind" on clean images, so subtracting it removes real signal there. On the worst images it carries none, and the subtraction stops hurting.**
    - At T=999 the contrast-branch margin still separates present from absent objects with AUROC 0.69 on clean images.
    - That falls to ≈0.5 at blur s4, and to below 0.5 at noise s3–s4.
-   - Subtracting it costs discrimination, while its overall offset (the language prior leans "no" less than the real branch does) supplies the yes-shift.
+   - The unmasked VCD margin follows the same pattern. It is below the baseline on clean and mildly degraded images (−0.016 clean; CI below zero in 18 of 27 cells) and above it in 4 cells at the highest severities: blur s4 random (+0.013), noise s3 random (+0.007), noise s4 random (+0.018) and noise s4 adversarial (+0.007).
+   - The contrast's overall offset (the language prior leans "no" less than the real branch does) supplies the yes-shift at every level.
 
 4. **The mechanism the hypothesis predicted is real, but it isn't what drives F1.**
    - JS(real ‖ contrast) falls from 0.135 (clean) to 0.066 (blur s4) and 0.083 (noise s4): the two branches do converge as the input degrades.
@@ -241,7 +246,7 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
 ### Implications for Phase 2
 
 - Plain F1 on POPE can't tell a better decoder from a recalibrated one. Every fix should be reported against two references: (a) the **matched-threshold baseline** and (b) **AUROC**, alongside F1 and yes-ratio.
-- A fix that genuinely restores contrast should raise AUROC above the baseline's, which VCD never does. That makes the bar clear and measurable.
+- A fix that genuinely restores contrast should raise AUROC above the baseline's, which VCD's decisions do in only 1 of 27 cells. That makes the bar clear and measurable.
 - Fixes aimed at making the negative "blinder" (degradation-aware T, blank image, text-only prior) are cheap to test offline first:
   - Run only the contrast branch, log its margin, and recompute AUROC and F1 from the stored real-branch logits.
   - The real branch is already logged for every question.
@@ -257,15 +262,17 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
   - **B1:** VCD on the restored image (contrast = restored + diffusion noise, T=999).
   - **B2:** VCD contrasting the restored image against the original degraded image.
 - **Comparison:** against the Stage 2 greedy baseline and VCD on the same questions. Analysis: `python -m scripts.analyze_fixb` → `results/fixb_comparison.csv`.
+- **Rescored 2026-11-11** with the corrected AUROC convention (mask-forced answers ranked by each variant's own real-branch margin). Only the AUROCs of the masked variants (VCD, B1, B2) changed; F1 and yes-ratios are identical.
+  - `python -m scripts.analyze_fixb --test-only` → `results/fixb_comparison_test.csv` scores the 400 TEST images of `fix_eval`, for comparison with the other fixes. B0 there is .921 / .904 / .875 / .836.
 
 ### Results: mean over the 3 splits
 
 | Noise level | AUROC base / VCD / **B0** / B1 / B2 | F1 base / VCD / **B0** / B1 / B2 | Yes-ratio base / VCD / B0 / B1 / B2 |
 |---|---|---|---|
-| s1 | .911 / .889 / **.922** / .898 / .895 | 76.1 / 81.7 / 80.0 / **82.9** / 79.5 | 34.6 / 46.1 / 37.4 / 46.7 / 39.8 |
-| s2 | .878 / .851 / **.902** / .873 / .868 | 69.6 / 78.1 / 74.6 / **78.9** / 75.5 | 30.3 / 46.0 / 34.4 / 44.9 / 39.1 |
-| s3 | .826 / .796 / **.875** / .847 / .841 | 57.6 / 72.9 / 69.2 / **75.7** / 72.8 | 23.5 / 44.0 / 31.6 / 43.7 / 38.8 |
-| s4 | .736 / .707 / **.833** / .800 / .798 | 43.0 / 63.1 / 61.0 / **70.5** / 67.9 | 16.8 / 38.9 / 26.8 / 41.9 / 38.3 |
+| s1 | .911 / .907 / **.922** / .916 / .913 | 76.1 / 81.7 / 80.0 / **82.9** / 79.5 | 34.6 / 46.1 / 37.4 / 46.7 / 39.8 |
+| s2 | .878 / .875 / **.902** / .896 / .891 | 69.6 / 78.1 / 74.6 / **78.9** / 75.5 | 30.3 / 46.0 / 34.4 / 44.9 / 39.1 |
+| s3 | .826 / .823 / **.875** / .868 / .863 | 57.6 / 72.9 / 69.2 / **75.7** / 72.8 | 23.5 / 44.0 / 31.6 / 43.7 / 38.8 |
+| s4 | .736 / .735 / **.833** / .825 / .823 | 43.0 / 63.1 / 61.0 / **70.5** / 67.9 | 16.8 / 38.9 / 26.8 / 41.9 / 38.3 |
 
 **Matched-threshold controls (F1, %)**
 
@@ -289,8 +296,8 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
    - VCD never cleared either bar in Stage 2.
 2. **VCD on top of restoration (B1) gives the best F1, but VCD's own contribution is still only a threshold shift.**
    - B1 has the highest F1 at every level: +1.2 / +0.8 / +2.8 / +7.4 over VCD.
-   - But AUROC(B1) < AUROC(B0) everywhere. VCD costs about the same AUROC on a restored input (−0.024 to −0.033) as on a degraded one (−0.022 to −0.030), so the interaction is ≈ 0: −0.004 to +0.002 on average, and the CI includes zero in all 12 cells.
-   - Against the baseline, B1's AUROC is higher at s3–s4 (CI > 0 in all 6 cells) and lower at s1 (CI < 0 in 2 of 3 cells).
+   - But AUROC(B1) < AUROC(B0) in every cell, by −0.004 to −0.008. VCD costs slightly more AUROC on a restored input (−0.006 to −0.008 by level) than on a degraded one (−0.001 to −0.004), so the interaction is zero or slightly negative: −0.002 / −0.003 / −0.004 / −0.006 for s1–s4, with the CI below zero in 7 of 12 cells and never above.
+   - Against the baseline, B1's AUROC is higher in 10 of 12 cells (CI > 0) and lower in none. That gain is the restoration's: B1 stays below B0.
    - B0 thresholded to B1's yes-ratio beats B1 by +0.9 to +1.7 F1.
    - **B1's gain over VCD therefore comes entirely from restoration.** The honest description is "restore before decoding", with VCD as an optional recalibration. It is not a fix to VCD's contrast.
 3. **A cleaner positive does not reopen the contrast gap.** B1's JS and |dm| are slightly *smaller* than VCD's. The "converging branches" problem from Stage 2 isn't caused by the positive branch being degraded; it's the T=999 negative that dominates.
@@ -338,8 +345,13 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
    - Forced on at α = 0.25 with the six views, AUROC drops by about 0.005 on clean and blur and is level at noise s3–s4.
    - Plain VCD without the mask at layer 20 beats the baseline in 17 of 27 cells, but ViewLayer's layer-only variant does better with no subtraction, so the gain is the layer-20 readout.
    - The lead from the unmasked-VCD AUROC (above the baseline at blur s4 and noise s3–s4) does not carry over.
-4. **Sanity checks.** The `viewlayer` variant reproduces `ViewLayer/README.md` exactly. The contrast view at layer 32 matches the Stage 2 contrast logits to within 0.11.
+4. **Against the DAE alone (same TEST images, same scorer).**
+   - Versus Fix B's B0 (the DAE view at layer 32): AUROC is higher in 18 of 27 cells and lower in none. The gain is +0.005 on clean, +0.009 to +0.031 on blur and +0.005 to +0.007 at noise s1–s3.
+   - **At noise s4 the DAE alone is as good or better:** .836 at layer 32 and .840 at layer 20, against .833 for ViewLayer+DAE (differences not significant). F1 there is 76.9 / 77.0 against 75.5.
+   - Versus the DAE view alone at its best layer (20): AUROC is higher in 6 cells (clean and blur s4) and lower in none.
+   - So the combination is never significantly worse than either part. The views and the layer-20 readout carry blur; the DAE carries noise, and on heavy noise the extra views add nothing to it.
+5. **Sanity checks.** The `viewlayer` variant reproduces `ViewLayer/README.md` exactly. The contrast view at layer 32 matches the Stage 2 contrast logits to within 0.11. The DAE view at layer 32 reproduces Fix B's B0 on the TEST images (.921 / .904 / .875 / .836).
 
-### Open points
-- **Not yet compared with the DAE alone.** Fix B's B0 scored .833 at noise s4 on all 500 images at the final layer; the .833 here is on the 400 TEST images at layer 20. Rescore Fix B through `fix_eval/common.py` before claiming the combination beats the DAE alone.
-- Stage 2 and Fix B still use the tie-based AUROC for masked answers (`scripts/analyze.py`). Under the `fix_eval` scoring VCD roughly ties the baseline (at most −0.005) instead of losing by up to −0.054.
+### Follow-ups done (2026-11-11)
+- Fix B was rescored through the shared convention and on the TEST images (see the Fix B section and finding 4 above).
+- The Stage 2 AUROC was recomputed with the corrected scoring (see the Stage 2 margin analysis).
