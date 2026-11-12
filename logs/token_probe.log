@@ -1,0 +1,13 @@
+conditions with complete token features: [('clean', 0), ('blur', 1), ('blur', 2), ('blur', 3), ('blur', 4), ('noise', 1), ('noise', 2), ('noise', 3), ('noise', 4)]
+last L24 (current probe)               [gold   ] C=0.0003 DEV-CV 0.9011 | TEST meanΔ +0.0505 | clean 0.955 blur4 0.845 noise4 0.818
+last L24 (current probe)               [teacher] C=0.0003 DEV-CV 0.8854 | TEST meanΔ +0.0384 | clean 0.948 blur4 0.830 noise4 0.802
+last L24 + obj L20                     [gold   ] C=0.0001 DEV-CV 0.8991 | TEST meanΔ +0.0483 | clean 0.955 blur4 0.840 noise4 0.812
+last L24 + obj L20                     [teacher] C=0.0001 DEV-CV 0.8813 | TEST meanΔ +0.0373 | clean 0.948 blur4 0.829 noise4 0.800
+last L24 + pool L20                    [gold   ] C=0.0001 DEV-CV 0.8983 | TEST meanΔ +0.0465 | clean 0.954 blur4 0.837 noise4 0.809
+last L24 + pool L20                    [teacher] C=0.0001 DEV-CV 0.8818 | TEST meanΔ +0.0344 | clean 0.947 blur4 0.822 noise4 0.796
+last L24 + obj L20 + pool L20          [gold   ] C=0.0001 DEV-CV 0.8984 | TEST meanΔ +0.0478 | clean 0.955 blur4 0.839 noise4 0.811
+last L24 + obj L20 + pool L20          [teacher] C=0.0001 DEV-CV 0.8797 | TEST meanΔ +0.0354 | clean 0.947 blur4 0.826 noise4 0.800
+last L24 + mean-image L20 (control)    [gold   ] C=0.0003 DEV-CV 0.9014 | TEST meanΔ +0.0497 | clean 0.954 blur4 0.843 noise4 0.821
+last L24 + mean-image L20 (control)    [teacher] C=0.0001 DEV-CV 0.8844 | TEST meanΔ +0.0348 | clean 0.948 blur4 0.821 noise4 0.797
+obj L20 + pool L20 (no last token)     [gold   ] C=0.0001 DEV-CV 0.8898 | TEST meanΔ +0.0385 | clean 0.951 blur4 0.826 noise4 0.798
+obj L20 + pool L20 (no last token)     [teacher] C=0.0001 DEV-CV 0.8704 | TEST meanΔ +0.0277 | clean 0.944 blur4 0.814 noise4 0.791

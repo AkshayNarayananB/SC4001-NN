@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+dola_topk_blur4,dola_topk,sample,55,1.0,0.1,999,blur,4,16.0,random,3000,0.70467,0.86548,0.48467,0.62137,0.28,0.0,0.1486,2026-11-10T12:22:13
+dola_topk_blur4,dola_topk,sample,55,1.0,0.1,999,blur,4,16.0,popular,3000,0.679,0.78778,0.49,0.60419,0.311,0.0,0.1517,2026-11-10T12:30:10
+dola_topk_blur4,dola_topk,sample,55,1.0,0.1,999,blur,4,16.0,adversarial,3000,0.63833,0.70283,0.47933,0.56996,0.341,0.0,0.1486,2026-11-10T12:37:57

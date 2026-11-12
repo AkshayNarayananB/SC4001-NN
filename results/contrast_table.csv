@@ -1,0 +1,4 @@
+Method,Passes,Mean dAUROC,Sig AUROC,Sig F1,AUROC Clean,AUROC Blur s4,AUROC Noise s4,F1 Blur s4,F1 Noise s4,Yes% Blur s4,threshold
+Baseline (threshold 0),1,,–,–,0.9401,0.7501,0.7374,40.8428,43.9099,15.3056,0.0000
+"VCD, zero-hook contrast (a=1, b=0.1)",2,-0.0005,1/18,0/0,0.9398,0.7496,0.7367,40.5715,43.2368,15.1250,0.0000
+"VCD, shuffle-hook contrast (a=1, b=0.1)",2,-0.0032,0/26,0/10,0.9361,0.7473,0.7350,39.5987,43.4549,15.0417,0.0000

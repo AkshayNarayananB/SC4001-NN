@@ -1,0 +1,4 @@
+name,method,decoding,seed,alpha,beta,noise_step,kind,level,param,split,n,accuracy,precision,recall,f1,yes_ratio,unclear_rate,sec_per_q,finished
+dola_anchor_blur3,dola_anchor,sample,55,1.0,0.1,999,blur,3,10.0,random,3000,0.73867,0.93133,0.51533,0.66352,0.27667,0.0,0.1575,2026-11-08T14:38:04
+dola_anchor_blur3,dola_anchor,sample,55,1.0,0.1,999,blur,3,10.0,popular,3000,0.72233,0.87514,0.51867,0.65132,0.29633,0.0,0.1567,2026-11-08T14:46:11
+dola_anchor_blur3,dola_anchor,sample,55,1.0,0.1,999,blur,3,10.0,adversarial,3000,0.7,0.81185,0.52067,0.63444,0.32067,0.0,0.1567,2026-11-08T14:54:18

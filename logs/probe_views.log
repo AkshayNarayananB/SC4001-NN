@@ -1,0 +1,24 @@
+fit gold L24: 9234 rows
+fit teacher L16+24: 9234 rows
+                                                0                1                2                3                4                5
+cond                                      blur s4          blur s4          blur s4         noise s4         noise s4         noise s4
+split                                      random          popular      adversarial           random          popular      adversarial
+base                                        0.793            0.759            0.698            0.784             0.74            0.687
+viewlayer                                   0.835            0.789            0.721            0.868            0.821            0.762
+gold L24 (1 view)                           0.868            0.885             0.79            0.837            0.863            0.759
+gold L24 + blur1 (2 views)                  0.868            0.885             0.79            0.869             0.89            0.789
+gold L24 x 5 views                           0.87            0.887            0.791            0.888            0.903            0.808
+gold L24 x5 - VL CI               [+0.022,+0.045]  [+0.085,+0.109]  [+0.057,+0.084]  [+0.009,+0.030]  [+0.070,+0.094]  [+0.033,+0.059]
+teacher L16+24 (1 view)                     0.863            0.862            0.765            0.832            0.834            0.736
+teacher L16+24 + blur1 (2 views)            0.863            0.862            0.765            0.864            0.867            0.768
+teacher L16+24 x 5 views                    0.866            0.864            0.766            0.883            0.882             0.79
+teacher L16+24 x5 - VL CI         [+0.021,+0.039]  [+0.065,+0.084]  [+0.035,+0.056]  [+0.006,+0.024]  [+0.051,+0.071]  [+0.018,+0.038]
+cond                              blur s4  noise s4
+base                                0.750     0.737
+viewlayer                           0.781     0.817
+gold L24 (1 view)                   0.848     0.820
+gold L24 + blur1 (2 views)          0.848     0.849
+gold L24 x 5 views                  0.849     0.866
+teacher L16+24 (1 view)             0.830     0.801
+teacher L16+24 + blur1 (2 views)    0.830     0.833
+teacher L16+24 x 5 views            0.832     0.852

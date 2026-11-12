@@ -1,0 +1,27 @@
+[2026-11-11 22:33:10] START views_pilot
+[2026-11-11 23:52:10] END   exit=0
+[2026-11-11 23:52:10] START patches
+[2026-11-12 00:03:33] END   exit=0
+[2026-11-12 00:03:33] START contrast
+[2026-11-12 00:34:41] START tokens
+[2026-11-12 02:05:10] END   exit=0
+[2026-11-12 02:05:10] START contrast
+[2026-11-12 04:23:57] END   exit=0
+[2026-11-12 04:23:57] QUEUE DONE
+[2026-11-12 12:17:44] START views_all
+[2026-11-12 13:53:21] PAUSED views_all (manual stop for DAE pilot)
+[2026-11-12 13:53:51] START pvd_smoke
+[2026-11-12 13:55:29] END   exit=0
+[2026-11-12 13:55:29] START pvd_dae_s4
+[2026-11-12 14:15:35] END   exit=0
+[2026-11-12 14:15:35] DAE PILOT DONE
+[2026-11-12 14:16:42] views_all superseded by queue_probe_views_dae.sh (vcd-pvd)
+[2026-11-12 14:16:42] START pvd_smoke
+[2026-11-12 14:17:16] END   exit=0
+[2026-11-12 14:17:16] START pvd_dae
+[2026-11-12 15:23:29] END   exit=0
+[2026-11-12 15:23:29] START pvd_views
+[2026-11-12 18:29:08] END   exit=0
+[2026-11-12 18:29:08] START pvd_analyze
+[2026-11-12 18:31:35] END   exit=0
+[2026-11-12 18:31:35] PVD QUEUE DONE

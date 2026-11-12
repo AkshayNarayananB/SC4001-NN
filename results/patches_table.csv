@@ -1,0 +1,5 @@
+Method,Passes,Mean dAUROC,Sig AUROC,Sig F1,AUROC Clean,AUROC Blur s4,AUROC Noise s4,F1 Blur s4,F1 Noise s4,Yes% Blur s4,threshold
+Baseline (threshold 0),1,,–,–,0.9401,0.7501,0.7374,40.8428,43.9099,15.3056,0.0000
+Baseline (DEV threshold)*,1,,–,–,0.9401,0.7501,0.7374,67.8828,68.7227,42.9306,-2.7344
+"Patch grounding (L24, top5, z)*",1,-0.1177,0/25,0/26,0.7716,0.6565,0.6488,64.4650,63.1026,61.2917,0.1803
+Patch grounding + baseline (w=0.25)*,1,-0.0003,9/10,8/7,0.9394,0.7484,0.7355,68.0794,68.4347,45.0556,-0.5262

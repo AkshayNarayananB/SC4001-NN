@@ -1,0 +1,22 @@
+method,cond,split,auroc,d_auroc_lo,d_auroc_hi,f1,f1_matched,passes,p_uncertain
+Layer 20 only,clean,random,0.9637,0.0000,0.0000,0.8876,0.8876,0.6250,
+Layer 20 only,clean,popular,0.9456,0.0000,0.0000,0.8657,0.8657,0.6250,
+Layer 20 only,clean,adversarial,0.9198,0.0000,0.0000,0.8353,0.8353,0.6250,
+Layer 20 only,blur s4,random,0.8318,0.0000,0.0000,0.5150,0.5150,0.6250,
+"ViewLayer (5 views, L20)",blur s4,random,0.8349,0.0015,0.0046,0.5079,0.5103,5.0000,
+Gated ViewLayer (uncertainty-gated),blur s4,random,0.8349,0.0015,0.0046,0.5079,0.5103,3.0521,0.9708
+Layer 20 only,blur s4,popular,0.7866,0.0000,0.0000,0.5029,0.5029,0.6250,
+"ViewLayer (5 views, L20)",blur s4,popular,0.7891,0.0007,0.0042,0.4959,0.4970,5.0000,
+Gated ViewLayer (uncertainty-gated),blur s4,popular,0.7890,0.0006,0.0040,0.4959,0.4970,3.0521,0.9708
+Layer 20 only,blur s4,adversarial,0.7187,0.0000,0.0000,0.4894,0.4894,0.6250,
+"ViewLayer (5 views, L20)",blur s4,adversarial,0.7205,-0.0004,0.0039,0.4822,0.4856,5.0000,
+Gated ViewLayer (uncertainty-gated),blur s4,adversarial,0.7204,-0.0005,0.0039,0.4822,0.4856,3.0510,0.9704
+Layer 20 only,noise s4,random,0.8091,0.0000,0.0000,0.5502,0.5502,0.6250,
+"ViewLayer (5 views, L20)",noise s4,random,0.8675,0.0494,0.0678,0.6075,0.5693,5.0000,
+Gated ViewLayer (uncertainty-gated),noise s4,random,0.8675,0.0494,0.0678,0.6075,0.5693,3.0385,0.9654
+Layer 20 only,noise s4,popular,0.7532,0.0000,0.0000,0.5285,0.5285,0.6250,
+"ViewLayer (5 views, L20)",noise s4,popular,0.8208,0.0576,0.0765,0.5930,0.5312,5.0000,
+Gated ViewLayer (uncertainty-gated),noise s4,popular,0.8204,0.0569,0.0762,0.5927,0.5320,3.0375,0.9650
+Layer 20 only,noise s4,adversarial,0.6994,0.0000,0.0000,0.5140,0.5140,0.6250,
+"ViewLayer (5 views, L20)",noise s4,adversarial,0.7616,0.0523,0.0747,0.5768,0.5156,5.0000,
+Gated ViewLayer (uncertainty-gated),noise s4,adversarial,0.7614,0.0522,0.0746,0.5768,0.5156,3.0375,0.9650

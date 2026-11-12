@@ -1,0 +1,20 @@
+base: 32
+batch: 16
+blur_range:
+- 2.0
+- 20.0
+crop: 256
+depth: 4
+log_every: 100
+lr: 0.0002
+name: dae_v1
+noise_range:
+- 0.1
+- 1.1
+p_clean: 0.2
+seed: 0
+steps: 60000
+val_every: 5000
+val_limit: 100
+warmup: 1000
+workers: 15

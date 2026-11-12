@@ -1,0 +1,20 @@
+Loading weights:   0%|          | 0/686 [00:00<?, ?it/s]Loading weights:  20%|█▉        | 136/686 [00:00<00:00, 1302.83it/s]Loading weights:  40%|███▉      | 273/686 [00:00<00:00, 1254.29it/s]Loading weights:  92%|█████████▏| 631/686 [00:00<00:00, 1964.64it/s]Loading weights: 100%|██████████| 686/686 [00:00<00:00, 1873.58it/s]
+500 images, 79 objects, layers (8, 12, 16, 20, 24, 28, 32)
+patches_clean_s0.npz: 0 done, 500 to run
+patches_clean_s0:   0%|          | 0/500 [00:00<?, ?it/s]patches_clean_s0:  42%|████▏     | 211/500 [00:30<00:41,  7.02it/s]patches_clean_s0:  42%|████▏     | 211/500 [00:47<00:41,  7.02it/s]patches_clean_s0:  84%|████████▍ | 422/500 [01:00<00:11,  7.02it/s]patches_clean_s0: 100%|██████████| 500/500 [01:11<00:00,  7.03it/s]
+patches_blur_s1.npz: 0 done, 500 to run
+patches_blur_s1:   0%|          | 0/500 [00:00<?, ?it/s]patches_blur_s1:  43%|████▎     | 214/500 [00:30<00:40,  7.12it/s]patches_blur_s1:  43%|████▎     | 214/500 [00:46<00:40,  7.12it/s]patches_blur_s1:  85%|████████▌ | 426/500 [01:00<00:10,  7.08it/s]patches_blur_s1: 100%|██████████| 500/500 [01:10<00:00,  7.10it/s]
+patches_blur_s2.npz: 0 done, 500 to run
+patches_blur_s2:   0%|          | 0/500 [00:00<?, ?it/s]patches_blur_s2:  43%|████▎     | 213/500 [00:30<00:40,  7.09it/s]patches_blur_s2:  43%|████▎     | 213/500 [00:46<00:40,  7.09it/s]patches_blur_s2:  85%|████████▌ | 426/500 [01:00<00:10,  7.09it/s]patches_blur_s2: 100%|██████████| 500/500 [01:10<00:00,  7.09it/s]
+patches_blur_s3.npz: 0 done, 500 to run
+patches_blur_s3:   0%|          | 0/500 [00:00<?, ?it/s]patches_blur_s3:  43%|████▎     | 213/500 [00:30<00:40,  7.09it/s]patches_blur_s3:  43%|████▎     | 213/500 [00:45<00:40,  7.09it/s]patches_blur_s3:  85%|████████▍ | 424/500 [01:00<00:10,  7.04it/s]patches_blur_s3: 100%|██████████| 500/500 [01:10<00:00,  7.06it/s]
+patches_blur_s4.npz: 0 done, 500 to run
+patches_blur_s4:   0%|          | 0/500 [00:00<?, ?it/s]patches_blur_s4:  44%|████▍     | 219/500 [00:30<00:38,  7.27it/s]patches_blur_s4:  44%|████▍     | 219/500 [00:44<00:38,  7.27it/s]patches_blur_s4:  87%|████████▋ | 437/500 [01:00<00:08,  7.25it/s]patches_blur_s4: 100%|██████████| 500/500 [01:08<00:00,  7.25it/s]
+patches_noise_s1.npz: 0 done, 500 to run
+patches_noise_s1:   0%|          | 0/500 [00:00<?, ?it/s]patches_noise_s1:  43%|████▎     | 214/500 [00:30<00:40,  7.10it/s]patches_noise_s1:  43%|████▎     | 214/500 [00:45<00:40,  7.10it/s]patches_noise_s1:  86%|████████▌ | 428/500 [01:00<00:10,  7.10it/s]patches_noise_s1: 100%|██████████| 500/500 [01:10<00:00,  7.10it/s]
+patches_noise_s2.npz: 0 done, 500 to run
+patches_noise_s2:   0%|          | 0/500 [00:00<?, ?it/s]patches_noise_s2:  42%|████▏     | 212/500 [00:30<00:40,  7.06it/s]patches_noise_s2:  42%|████▏     | 212/500 [00:45<00:40,  7.06it/s]patches_noise_s2:  85%|████████▌ | 425/500 [01:00<00:10,  7.07it/s]patches_noise_s2: 100%|██████████| 500/500 [01:10<00:00,  7.07it/s]
+patches_noise_s3.npz: 0 done, 500 to run
+patches_noise_s3:   0%|          | 0/500 [00:00<?, ?it/s]patches_noise_s3:  43%|████▎     | 213/500 [00:30<00:40,  7.09it/s]patches_noise_s3:  43%|████▎     | 213/500 [00:44<00:40,  7.09it/s]patches_noise_s3:  85%|████████▌ | 426/500 [01:00<00:10,  7.08it/s]patches_noise_s3: 100%|██████████| 500/500 [01:10<00:00,  7.08it/s]
+patches_noise_s4.npz: 0 done, 500 to run
+patches_noise_s4:   0%|          | 0/500 [00:00<?, ?it/s]patches_noise_s4:  43%|████▎     | 217/500 [00:30<00:39,  7.21it/s]patches_noise_s4:  43%|████▎     | 217/500 [00:44<00:39,  7.21it/s]patches_noise_s4:  87%|████████▋ | 434/500 [01:00<00:09,  7.21it/s]patches_noise_s4: 100%|██████████| 500/500 [01:09<00:00,  7.21it/s]
