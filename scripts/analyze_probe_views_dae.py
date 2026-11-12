@@ -243,16 +243,19 @@ def main(argv=None):
     comp.to_csv(out / "probe_views_dae_cells.csv", index=False, float_format="%.5f")
     table = al.summary_table(comp, entries)
 
-    vld = dict((m[0], m[1]) for m in methods)["ViewLayer+DAE*"]
-    h2h = ["", "### Against ViewLayer+DAE (paired bootstrap on identical TEST questions)", "",
-           "| Method | Passes | Mean ΔAUROC vs ViewLayer+DAE | Sig ↑/↓ | Δ Blur s4 | Δ Noise s4 |", "|---|---|---|---|---|---|"]
-    for label, s_t, _, passes, _ in methods:
-        if not (label.startswith("Gold") or label.startswith("Clean")):
-            continue
-        h = head_to_head(test, s_t, vld, args.boot, np.random.default_rng(1))
-        s4 = lambda kind: h[(h.kind == kind) & (h.level == 4)].delta.mean()
-        h2h.append(f"| {label} | {passes} | {h.delta.mean():+.4f} | {int((h.lo > 0).sum())}/{int((h.hi < 0).sum())} "
-                   f"| {s4('blur'):+.3f} | {s4('noise'):+.3f} |")
+    h2h = []
+    for ref in ("ViewLayer+DAE*", "ViewLayer*"):   # paired comparison with each training-free reference
+        ref_s = dict((m[0], m[1]) for m in methods)[ref]
+        name = ref.rstrip("*")
+        h2h += ["", f"### Against {name} (paired bootstrap on identical TEST questions)", "",
+                f"| Method | Passes | Mean ΔAUROC vs {name} | Sig ↑/↓ | Δ Blur s4 | Δ Noise s4 |", "|---|---|---|---|---|---|"]
+        for label, s_t, _, passes, _ in methods:
+            if not (label.startswith("Gold") or label.startswith("Clean")):
+                continue
+            h = head_to_head(test, s_t, ref_s, args.boot, np.random.default_rng(1))
+            s4 = lambda kind: h[(h.kind == kind) & (h.level == 4)].delta.mean()
+            h2h.append(f"| {label} | {passes} | {h.delta.mean():+.4f} | {int((h.lo > 0).sum())}/{int((h.hi < 0).sum())} "
+                       f"| {s4('blur'):+.3f} | {s4('noise'):+.3f} |")
 
     notes = [f"Probes fit on the original view of the DEV images only ({', '.join(f'{SHORT[n]}: layers {list(l)}, C={C:g}' for n, (l, C, _) in PROBES.items())}); "
              "each view is scored by the same probe and the scores are averaged.",
