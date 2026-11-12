@@ -67,10 +67,18 @@ def seeded_generator(*parts) -> torch.Generator:
     return torch.Generator().manual_seed(zlib.crc32("|".join(map(str, parts)).encode()))
 
 
+LEGACY_METHOD_KEYS = {"dola_top_k": "top_k", "dola_patience": "patience", "dola_epsilon": "epsilon"}
+
+
 def build_method(cfg):
+    """VCD-family methods take alpha/beta; routing methods take `method_args` from the config
+    (e.g. {top_k: 3, temperature: 0.5}); the older top-level dola_* keys are still accepted."""
     if cfg["method"] == "baseline":
         return METHODS["baseline"]()
-    return METHODS[cfg["method"]](alpha=cfg["alpha"], beta=cfg["beta"])
+    if cfg["method"].startswith("vcd"):
+        return METHODS[cfg["method"]](alpha=cfg["alpha"], beta=cfg["beta"])
+    args = {new: cfg[old] for old, new in LEGACY_METHOD_KEYS.items() if old in cfg}
+    return METHODS[cfg["method"]](**{**args, **cfg.get("method_args", {})})
 
 
 def prepare_run_dir(cfg) -> Path:
