@@ -41,7 +41,7 @@ Run this on the machine that wrote the existing `layers_<cond>/` logs (Akshay's 
 
 1. Copy the DAE weights from ASPIRE to `$VCD_CHECKPOINT_ROOT/dae/dae_v1/best.pt`:
    ```bash
-   scp <user>@aspire2a.nscc.sg:/scratch/users/ntu/c230202/checkpoints/dae/dae_v1/best.pt ...
+   scp c230202@aspire2antu.nscc.sg:/scratch/users/ntu/c230202/checkpoints/dae/dae_v1/best.pt ...
    ```
 2. Run the whole queue. It is resumable: the smoke test comes first, then the GPU runs, then the analysis.
    ```bash
