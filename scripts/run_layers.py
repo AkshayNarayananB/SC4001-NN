@@ -12,8 +12,9 @@ hyperparameters, can be scored offline by scripts/analyze_routing.py with no fur
 Questions are deduplicated per condition by (image, text): the "yes" questions are shared by all
 three splits, so this saves about a third of the passes. Output, one row per question:
     $VCD_OUTPUT_ROOT/layers_<kind>_s<level>[__<view>]/<split>.jsonl
-With --views, the same readout is logged for test-time views of the image (blur / flip), one
-forward pass per view, for the multi-view methods in scripts/analyze_layers.py.
+With --views, the same readout is logged for test-time views of the image (blur / flip, or 'dae':
+the image restored by the Fix B DAE, --dae <run name>), one forward pass per view, for the multi-view
+methods in scripts/probe_views.py and scripts/analyze_probe_views_dae.py.
 Resumable: unique-question results are appended to _cache.jsonl as they finish.
 """
 import argparse
@@ -35,7 +36,19 @@ HIDDEN_DIM = 4096
 CONDITIONS = [("clean", 0)] + [(k, l) for k in ("blur", "noise") for l in (1, 2, 3, 4)]
 
 
-VIEWS = ("orig", "blur1", "blur2", "blur3", "hflip")   # ViewLayer's views (origin/main ViewLayer/run_viewlayer.py)
+VIEWS = ("orig", "blur1", "blur2", "blur3", "hflip", "dae")   # ViewLayer's views (ViewLayer/run_viewlayer.py) + DAE
+DEFAULT_DAE = "dae_v1"   # the Fix B / ViewLayer+DAE checkpoint, $VCD_CHECKPOINT_ROOT/dae/<name>/best.pt
+_dae = {}                # lazily loaded DAE: {"name": ..., "model": ...}
+
+
+def load_view_dae(name: str = DEFAULT_DAE):
+    """The DAE used for the 'dae' view, loaded once (fp32; on the GPU when there is one)."""
+    if _dae.get("name") != name:
+        from src.fixes.dae import load_dae
+        from src.paths import CHECKPOINT_ROOT
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        _dae.update(name=name, model=load_dae(CHECKPOINT_ROOT / "dae" / name / "best.pt", device))
+    return _dae["model"]
 
 
 def cond_name(kind: str, level: int) -> str:
@@ -48,9 +61,14 @@ def run_dir_name(kind: str, level: int, view: str = "orig") -> str:
 
 def make_view(img: Image.Image, view: str) -> Image.Image:
     """Deterministic test-time view of the (degraded) image at native resolution; identical to
-    ViewLayer's make_view (torchvision gaussian_blur with kernel 2*ceil(3 sigma)+1)."""
+    ViewLayer's make_view (torchvision gaussian_blur with kernel 2*ceil(3 sigma)+1).
+    'dae' is the image restored by the Fix B DAE, as in ViewLayerDAE/run_viewlayer_dae.py: run on
+    every condition (clean and blur included), so the method never needs to know the degradation."""
     if view == "orig":
         return img
+    if view == "dae":
+        from src.fixes.dae import restore
+        return restore(load_view_dae(_dae.get("name", DEFAULT_DAE)), img)
     import math
     import torchvision.transforms.functional as TF
     if view == "hflip":
@@ -93,6 +111,11 @@ def run_condition(model, processor, kind, level, limit, norm, lm_head, ids, view
     for split in POPE_SPLITS:
         with open(pope_question_file(split)) as f:
             questions[split] = select_questions([json.loads(l) for l in f if l.strip()], limit)
+    if view == "dae":   # never mix restorations from two checkpoints in one run directory
+        marker, name = run_dir / "_dae.txt", _dae["name"]
+        if marker.exists() and marker.read_text().strip() != name:
+            raise SystemExit(f"{run_dir} was run with DAE {marker.read_text().strip()!r}, not {name!r}")
+        marker.write_text(name + "\n")
     if all((run_dir / f"{s}.jsonl").exists() for s in POPE_SPLITS):
         print(f"{run_dir.name}: done, skipping")
         return
@@ -143,7 +166,10 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="questions per split (smoke tests)")
     parser.add_argument("--views", nargs="+", default=["orig"], choices=VIEWS,
                         help="extra test-time views (one forward pass each) for multi-view methods")
+    parser.add_argument("--dae", default=DEFAULT_DAE, help="DAE run name under $VCD_CHECKPOINT_ROOT/dae/ (view 'dae')")
     args = parser.parse_args()
+    if "dae" in args.views:
+        load_view_dae(args.dae)
     if args.limit is not None:
         global OUTPUT_ROOT
         OUTPUT_ROOT = OUTPUT_ROOT / f"smoke_limit{args.limit}"
