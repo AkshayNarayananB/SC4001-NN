@@ -218,64 +218,103 @@ It is a different mechanism, not a ViewLayer extension. ViewLayer adds informati
 
 **Where it loses.** It loses on noise s3–s4, the regime where the input itself has lost information (§5, point 3). There, ViewLayer's views remain the better choice when 5× compute is affordable.
 
-## 7. Pilot: probes on ViewLayer's views (blur s4 and noise s4 only)
+## 7. Probes on ViewLayer's views and the DAE view (full 27 cells)
 
-**Question.** The probe fixes the readout, and ViewLayer's views fix the input. Do the two gains add up?
+**Question.** The probe fixes the readout. ViewLayer's views, and Arushi's DAE-restored view, fix the input. Do the two gains add up?
 
 **Setup.**
-- The probes are **not retrained**. These are the same gold and clean-teacher probes as in §1, fit on the original view of the DEV images.
-- Each probe scores every one of ViewLayer's views: original, blur σ=1/2/3 and h-flip. The scores are then averaged, as ViewLayer averages margins.
-- The views come from the view runs already made for the head-to-head in §2.3. Those exist only for **blur s4 and noise s4**, so this is a 6-cell pilot, not the full 27-cell table.
-- Script: `python -m scripts.probe_views`.
+- The probes are **not retrained**. They are the gold and clean-teacher probes from §1, fit on the original view of the DEV images.
+- Each probe scores every view, and the scores are averaged:
+  - `score(q) = mean over views v of probe(h_v(q))`
+  - The probe simply replaces ViewLayer's fixed layer-20 Yes−No readout.
+- **Views:** ViewLayer's five (original, blur σ=1/2/3, h-flip), plus the `dae_v1`-restored image as a sixth.
+- **DEV view set:** chosen over all 63 non-empty subsets by mean DEV AUROC. The DEV scores are out-of-fold (5 image-grouped folds), so a DEV image is always scored by a probe that never saw it.
+- **Threshold:** one global DEV F1 threshold per method.
+- **Code:** `scripts/analyze_probe_views_dae.py` (Sanjana), over view logs from `scripts/queue_probe_views_dae.sh`, run on the local GPU on 2026-11-12. ViewLayer and ViewLayer+DAE are recomputed from the same logs with their published DEV configurations.
+- **Outputs:** `results/probe_views_dae_{table.md,cells.csv,dev_sweep.csv}`.
 
-### 7.1 TEST AUROC, mean of three splits
+### 7.1 Main table (TEST, 27 cells)
 
-| Method | Passes | Blur s4 | Noise s4 |
-|---|---|---|---|
-| Baseline | 1 | .750 | .737 |
-| ViewLayer | 5 | .781 | .817 |
-| Clean-teacher probe | 1 | .830 | .801 |
-| Clean-teacher probe, original + blur σ=1 | 2 | .830 | .833 |
-| **Clean-teacher probe × 5 views** | 5 | **.832** | **.852** |
-| Gold probe L24 | 1 | .848 | .820 |
-| Gold probe, original + blur σ=1 | 2 | .848 | .849 |
-| **Gold probe × 5 views** | 5 | **.849** | **.866** |
+| Method | Passes | Mean ΔAUROC | Sig ↑/↓ AUROC | Sig ↑/↓ F1 | AUROC Clean | AUROC Blur s4 | AUROC Noise s4 | F1 Blur s4 | F1 Noise s4 |
+|---|---|---|---|---|---|---|---|---|---|
+| Baseline (DEV threshold)* | 1 | – | – | – | .940 | .750 | .737 | 67.9 | 68.7 |
+| ViewLayer* | 5 | +.0277 | 26/0 | 11/0 | .945 | .781 | .817 | 68.5 | 73.9 |
+| ViewLayer+DAE* | 6 | +.0315 | 26/0 | 11/0 | .945 | .781 | .833 | 67.2 | 75.6 |
+| Clean-teacher probe, 1 view* | 1 | +.0383 | 26/0 | 21/0 | .949 | .830 | .801 | 76.4 | 73.9 |
+| **Clean-teacher probe, original + DAE view*** | **2** | **+.0510** | 26/0 | 24/0 | .949 | .830 | .862 | 76.5 | 78.9 |
+| Clean-teacher probe × ViewLayer views* | 5 | +.0491 | 26/0 | 21/0 | .949 | .832 | .852 | 77.1 | 77.7 |
+| Clean-teacher probe × ViewLayer+DAE views* | 6 | +.0517 | 26/0 | 23/0 | .949 | .832 | .863 | 76.3 | 78.7 |
+| **Clean-teacher probe, DEV views (blur2 + hflip + DAE)*** | **3** | **+.0533** | 26/0 | 24/0 | .950 | .833 | .868 | 77.4 | 79.3 |
+| Gold probe, 1 view* | 1 | +.0503 | 26/0 | 25/0 | .952 | .848 | .820 | 77.7 | 75.2 |
+| Gold probe, original + DAE view* | 2 | +.0616 | 26/0 | 26/0 | .952 | .848 | .876 | 76.8 | 80.0 |
+| Gold probe × ViewLayer views* | 5 | +.0598 | 26/0 | 26/0 | .953 | .849 | .866 | 75.9 | 77.4 |
+| Gold probe × ViewLayer+DAE views* | 6 | +.0620 | 26/0 | 26/0 | .953 | .849 | .877 | 75.8 | 79.3 |
+| **Gold probe, DEV views (blur2 + hflip + DAE)*** | 3 | **+.0634** | 26/0 | **27/0** | .954 | .850 | .881 | 75.8 | 79.9 |
 
-### 7.2 Per split, with the paired-bootstrap Δ against ViewLayer
+The only cell that is not significantly above the baseline in AUROC, for every row, is clean/adversarial, where the baseline is already .92+. The gold probe with DEV views beats the matched-threshold baseline's F1 in all 27 cells.
 
-The intervals are 95% paired-bootstrap intervals over 500 resamples.
+### 7.2 Paired comparison with ViewLayer+DAE (identical TEST questions, 500 bootstrap resamples)
 
-| Cell | ViewLayer | Teacher (1 pass) | Teacher × 5 views | Δ teacher×5 − ViewLayer [95% CI] | Gold × 5 views | Δ gold×5 − ViewLayer [95% CI] |
-|---|---|---|---|---|---|---|
-| blur s4 random | .835 | .863 | .866 | [+.021, +.039] | .870 | [+.022, +.045] |
-| blur s4 popular | .789 | .862 | .864 | [+.065, +.084] | .887 | [+.085, +.109] |
-| blur s4 adversarial | .721 | .765 | .766 | [+.035, +.056] | .791 | [+.057, +.084] |
-| noise s4 random | .868 | .832 | .883 | [+.006, +.024] | .888 | [+.009, +.030] |
-| noise s4 popular | .821 | .834 | .882 | [+.051, +.071] | .903 | [+.070, +.094] |
-| noise s4 adversarial | .762 | .736 | .790 | [+.018, +.038] | .808 | [+.033, +.059] |
+| Method | Passes | Mean ΔAUROC vs ViewLayer+DAE | Sig ↑/↓ (27 cells) | Δ Blur s4 | Δ Noise s4 |
+|---|---|---|---|---|---|
+| Clean-teacher probe, 1 view | 1 | +.0068 | 14/7 | +.049 | −.032 |
+| Clean-teacher probe, original + DAE | 2 | +.0195 | 19/0 | +.049 | +.029 |
+| Clean-teacher probe × ViewLayer views | 5 | +.0176 | 18/0 | +.051 | +.018 |
+| Clean-teacher probe × ViewLayer+DAE views | 6 | +.0202 | 21/0 | +.050 | +.030 |
+| Clean-teacher probe, DEV views | 3 | +.0218 | 23/0 | +.052 | +.034 |
+| Gold probe, original + DAE | 2 | +.0301 | 25/0 | +.066 | +.042 |
+| Gold probe, DEV views | 3 | +.0319 | 26/0 | +.068 | +.048 |
 
-### 7.3 What it shows
+ViewLayer+DAE is the team's strongest training-free method. With any of the extra views, the clean-teacher probe is never significantly worse than ViewLayer+DAE in any cell. The 1-view probe is the exception: it is significantly worse in 7 cells, and noise s4 is where it falls behind (−.032).
 
-- **It breaks the noise ceiling.** Every single-pass readout plateaued at about .80–.82 on noise s4 (§5, point 3). With views added, the label-free teacher reaches .852 and the gold probe .866. Both beat ViewLayer significantly in **all 6 cells**.
-- **The gains add as the diagnosis predicted.**
-  - On noise, the views lift the probe by +.05: they restore evidence the noise destroyed.
-  - On blur, the views add almost nothing (+.002): the evidence was present but mis-read, and the probe already fixes that. ViewLayer's own ablation found the same, with views-only giving .753 on blur s4.
-- **A cheaper variant also beats ViewLayer.** With two passes, original plus blur σ=1, the teacher reaches .830 / .833, beating ViewLayer's .781 / .817 on both degradations at 2/5 of the compute.
-- **The labelled probe is not needed.** The label-free teacher × 5 views is within .014–.017 of the gold probe × 5 views.
+### 7.3 Per condition (TEST AUROC, mean of three splits)
 
-### 7.4 Caveats before this goes in the report
+| Condition | ViewLayer (5) | ViewLayer+DAE (6) | Teacher, 1 view (1) | Teacher + DAE (2) | Teacher × ViewLayer views (5) | Teacher, DEV views (3) | Gold, DEV views (3) |
+|---|---|---|---|---|---|---|---|
+| Clean | .945 | .945 | .949 | .949 | .949 | .950 | **.954** |
+| Blur s1 | .915 | .915 | .928 | .928 | .928 | .929 | **.936** |
+| Blur s2 | .891 | .891 | .910 | .910 | .911 | .911 | **.923** |
+| Blur s3 | .857 | .857 | .886 | .886 | .887 | .887 | **.901** |
+| Blur s4 | .782 | .781 | .830 | .830 | .832 | .833 | **.850** |
+| Noise s1 | .925 | .927 | .927 | .934 | .932 | .935 | **.942** |
+| Noise s2 | .903 | .909 | .905 | .920 | .917 | .922 | **.929** |
+| Noise s3 | .873 | .882 | .867 | .898 | .894 | .902 | **.913** |
+| Noise s4 | .817 | .833 | .801 | .862 | .852 | .868 | **.881** |
 
-- **Pilot scale.** These are 6 cells (s4 only). Clean, s1–s3, and the full Sig ↑/↓ counts need the view runs for the other 7 conditions: 28 GPU runs, about 6 h on the local GPU.
-- **Post-hoc 2-view subset.** The view set for "× 5 views" is ViewLayer's own DEV-chosen set, so it involves no new selection. The 2-view subset (original + blur σ=1) was picked after looking at these TEST numbers. For the report, choose the view set on DEV.
-- **No F1 yet.** F1 and thresholds are not computed here. AUROC only.
-- **Framing.** This reuses ViewLayer's views, so credit them. The fair statement is that the probe replaces ViewLayer's fixed layer-20 readout. With the views kept, that one change takes noise s4 from .817 to .852 and blur s4 from .781 to .832.
+F1 (%) with DEV thresholds, for the same methods:
 
-**Options for the team:**
+| Condition | ViewLayer | ViewLayer+DAE | Teacher, 1 view | Teacher + DAE | Teacher × ViewLayer views | Teacher, DEV views | Gold, DEV views |
+|---|---|---|---|---|---|---|---|
+| Clean | 84.4 | 85.1 | 87.6 | 87.5 | 87.0 | 87.4 | 88.9 |
+| Blur s4 | 68.5 | 67.2 | 76.4 | 76.5 | 77.1 | 77.4 | 75.8 |
+| Noise s3 | 78.9 | 80.0 | 78.6 | 81.6 | 80.8 | 81.8 | 83.1 |
+| Noise s4 | 73.9 | 75.6 | 73.9 | 78.9 | 77.7 | 79.3 | 79.9 |
 
-| Option | Compute | Status |
-|---|---|---|
-| (a) Clean-teacher probe as the low-cost single-pass alternative | 1 pass | Results complete (§2, §6) |
-| (b) Add "probe + views" as the best-accuracy operating point | 2 or 5 passes | Needs the ~6 h run for the full table |
+### 7.4 What it shows
+
+- **The gains add, exactly as §5 predicted.**
+  - **Blur:** extra views add almost nothing to the probe (blur s4 .830 → .833). The evidence was present but mis-read, and the probe already fixes that.
+  - **Noise:** views add a lot (noise s4 .801 → .868), and the **DAE view is the single most useful addition.** On its own it gives .862, more than ViewLayer's four views together (.852).
+  - **Combined:** each component repairs a different failure, so together they reach the best numbers on both degradations.
+- **The ~.82 noise ceiling is broken.** Every single-pass readout plateaued at about .80–.82 on noise s4. With the restored view, the label-free teacher reaches .862 in 2 passes and .868 in 3. The gold probe reaches .881.
+- **Two practical operating points stand out:**
+
+  | Option | Passes | vs ViewLayer+DAE (6 passes) | Labels |
+  |---|---|---|---|
+  | **Clean-teacher probe + DAE view** | 2 | blur s4 +.049, noise s4 +.029, never significantly worse | none for the weights |
+  | **Clean-teacher probe, DEV views (blur σ2 + h-flip + DAE)** | 3 | better in 23/27 cells, worse in none | none for the weights |
+
+  With labels, the gold probe on the same 3 views is the best method overall: +.0634 mean ΔAUROC, beating the matched-threshold baseline's F1 in 27/27 cells.
+- **The view set was chosen on DEV**, not on TEST. DEV picked the same set (blur σ2 + h-flip + DAE) for both probes. This replaces the post-hoc 2-view subset in the earlier s4-only pilot.
+- **Compute.** Every row's cost is its number of forward passes. The DAE adds one 7.2M-parameter U-Net pass per image, which is negligible next to LLaVA-7B.
+
+### 7.5 Caveats
+
+- **The DAE is trained.** It was trained on COCO train2014 (Fix B), so methods using the DAE view are not training-free. The probe is also a fitted head. The honest comparison is against ViewLayer+DAE, which uses the same DAE.
+- **Blur is only addressed by the probe.** The DAE leaves blur unchanged (it acts as the identity on blur; see CLAUDE.md, Fix B), so on blur all of the gain comes from the probe.
+- **Operating point.** With global DEV thresholds the teacher's yes-ratio rises under heavy degradation (§4, Limitations). A deployment worried about hallucination should use a stricter threshold.
+- **Framing.** The views and the DAE come from teammates (ViewLayer: Sanjana; DAE: Arushi), so credit them. The probe is the readout that replaces layer 20. The fair claim is: "Replacing ViewLayer+DAE's fixed layer-20 readout with a label-free clean-teacher probe raises noise s4 from .833 to .862 and blur s4 from .781 to .830, with 2 forward passes instead of 6."
+- **Clean images.** Every method is within .005–.009 of the others on clean images, so the differences that matter are under degradation.
 
 ## Reproducing
 
@@ -286,5 +325,7 @@ python -m scripts.run_layers --views blur1 blur2 blur3 hflip   # ViewLayer views
 python -m scripts.analyze_layers                   # main table, probes, held-out degradation -> results/layers_*
 python -m scripts.analyze_selective                # results/selective_table.*
 python -m scripts.compare_viewlayer                # teacher vs ViewLayer -> results/compare_viewlayer.md
+bash scripts/queue_probe_views_dae.sh              # §7: DAE view + ViewLayer views for all 9 conditions, then
+                                                   #     python -m scripts.analyze_probe_views_dae (needs checkpoints/dae/dae_v1/best.pt)
 COMPARE_METHOD="Probe L24*" python -m scripts.compare_viewlayer   # -> results/compare_viewlayer_goldprobe.md
 ```

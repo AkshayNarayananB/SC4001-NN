@@ -1,0 +1,127 @@
+probe,views,n_views,dev_auroc
+Clean-teacher probe L16+24 (no labels),blur2+hflip+dae,3,0.89533
+Clean-teacher probe L16+24 (no labels),blur1+blur3+hflip+dae,4,0.89531
+Clean-teacher probe L16+24 (no labels),blur3+hflip+dae,3,0.89527
+Clean-teacher probe L16+24 (no labels),blur1+blur2+hflip+dae,4,0.89516
+Clean-teacher probe L16+24 (no labels),blur1+hflip+dae,3,0.89504
+Clean-teacher probe L16+24 (no labels),blur2+blur3+hflip+dae,4,0.89492
+Clean-teacher probe L16+24 (no labels),blur1+blur2+blur3+hflip+dae,5,0.89486
+Clean-teacher probe L16+24 (no labels),blur1+blur3+dae,3,0.89436
+Clean-teacher probe L16+24 (no labels),orig+blur2+blur3+hflip+dae,5,0.89413
+Clean-teacher probe L16+24 (no labels),blur1+blur2+dae,3,0.89411
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur3+hflip+dae,5,0.89410
+Clean-teacher probe L16+24 (no labels),hflip+dae,2,0.89406
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+blur3+hflip+dae,6,0.89405
+Clean-teacher probe L16+24 (no labels),orig+blur3+hflip+dae,4,0.89404
+Clean-teacher probe L16+24 (no labels),blur1+dae,2,0.89395
+Clean-teacher probe L16+24 (no labels),orig+blur2+hflip+dae,4,0.89391
+Clean-teacher probe L16+24 (no labels),blur2+dae,2,0.89390
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+hflip+dae,5,0.89388
+Clean-teacher probe L16+24 (no labels),blur1+blur2+blur3+dae,4,0.89384
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur3+dae,4,0.89350
+Clean-teacher probe L16+24 (no labels),blur3+dae,2,0.89348
+Clean-teacher probe L16+24 (no labels),blur2+blur3+dae,3,0.89340
+Clean-teacher probe L16+24 (no labels),orig+blur1+hflip+dae,4,0.89328
+Clean-teacher probe L16+24 (no labels),orig+blur3+dae,3,0.89327
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+blur3+dae,5,0.89327
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+dae,4,0.89325
+Clean-teacher probe L16+24 (no labels),orig+blur2+blur3+dae,4,0.89320
+Clean-teacher probe L16+24 (no labels),orig+blur2+dae,3,0.89315
+Clean-teacher probe L16+24 (no labels),blur1+blur3+hflip,3,0.89285
+Clean-teacher probe L16+24 (no labels),blur1+blur2+blur3+hflip,4,0.89280
+Clean-teacher probe L16+24 (no labels),orig+blur1+dae,3,0.89274
+Clean-teacher probe L16+24 (no labels),blur1+blur2+hflip,3,0.89267
+Clean-teacher probe L16+24 (no labels),orig+hflip+dae,3,0.89257
+Clean-teacher probe L16+24 (no labels),blur2+blur3+hflip,3,0.89240
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+blur3+hflip,5,0.89201
+Clean-teacher probe L16+24 (no labels),blur2+hflip,2,0.89195
+Clean-teacher probe L16+24 (no labels),blur3+hflip,2,0.89174
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur3+hflip,4,0.89165
+Clean-teacher probe L16+24 (no labels),orig+blur2+blur3+hflip,4,0.89164
+Clean-teacher probe L16+24 (no labels),orig+dae,2,0.89150
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+hflip,4,0.89133
+Clean-teacher probe L16+24 (no labels),blur1+blur3,2,0.89114
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2+blur3,4,0.89096
+Clean-teacher probe L16+24 (no labels),blur1+blur2+blur3,3,0.89095
+Clean-teacher probe L16+24 (no labels),blur1+hflip,2,0.89094
+Clean-teacher probe L16+24 (no labels),blur1+blur2,2,0.89079
+Clean-teacher probe L16+24 (no labels),dae,1,0.89066
+Clean-teacher probe L16+24 (no labels),orig+blur3+hflip,3,0.89064
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur3,3,0.89055
+Clean-teacher probe L16+24 (no labels),orig+blur2+hflip,3,0.89044
+Clean-teacher probe L16+24 (no labels),orig+blur1+blur2,3,0.89018
+Clean-teacher probe L16+24 (no labels),orig+blur2+blur3,3,0.89013
+Clean-teacher probe L16+24 (no labels),blur1,1,0.88950
+Clean-teacher probe L16+24 (no labels),orig+blur1+hflip,3,0.88920
+Clean-teacher probe L16+24 (no labels),orig+blur3,2,0.88908
+Clean-teacher probe L16+24 (no labels),orig+blur2,2,0.88904
+Clean-teacher probe L16+24 (no labels),blur2+blur3,2,0.88896
+Clean-teacher probe L16+24 (no labels),blur2,1,0.88872
+Clean-teacher probe L16+24 (no labels),orig+blur1,2,0.88769
+Clean-teacher probe L16+24 (no labels),blur3,1,0.88655
+Clean-teacher probe L16+24 (no labels),orig+hflip,2,0.88510
+Clean-teacher probe L16+24 (no labels),hflip,1,0.88307
+Clean-teacher probe L16+24 (no labels),orig,1,0.88037
+Gold probe L24,blur2+hflip+dae,3,0.90924
+Gold probe L24,blur3+hflip+dae,3,0.90920
+Gold probe L24,blur1+blur3+hflip+dae,4,0.90919
+Gold probe L24,blur1+hflip+dae,3,0.90912
+Gold probe L24,blur1+blur2+hflip+dae,4,0.90904
+Gold probe L24,blur2+blur3+hflip+dae,4,0.90882
+Gold probe L24,blur1+blur2+blur3+hflip+dae,5,0.90877
+Gold probe L24,blur1+dae,2,0.90871
+Gold probe L24,hflip+dae,2,0.90852
+Gold probe L24,blur1+blur2+dae,3,0.90849
+Gold probe L24,blur1+blur3+dae,3,0.90847
+Gold probe L24,blur2+dae,2,0.90832
+Gold probe L24,blur1+blur2+blur3+dae,4,0.90800
+Gold probe L24,orig+blur1+blur3+hflip+dae,5,0.90799
+Gold probe L24,orig+blur2+blur3+hflip+dae,5,0.90790
+Gold probe L24,orig+blur1+blur2+blur3+hflip+dae,6,0.90786
+Gold probe L24,orig+blur1+blur2+hflip+dae,5,0.90783
+Gold probe L24,orig+blur3+hflip+dae,4,0.90781
+Gold probe L24,blur3+dae,2,0.90780
+Gold probe L24,blur2+blur3+dae,3,0.90769
+Gold probe L24,orig+blur2+hflip+dae,4,0.90768
+Gold probe L24,orig+blur1+blur3+dae,4,0.90757
+Gold probe L24,orig+blur1+blur2+dae,4,0.90741
+Gold probe L24,orig+blur2+blur3+dae,4,0.90737
+Gold probe L24,orig+blur1+hflip+dae,4,0.90733
+Gold probe L24,orig+blur1+blur2+blur3+dae,5,0.90733
+Gold probe L24,orig+blur3+dae,3,0.90729
+Gold probe L24,orig+blur2+dae,3,0.90728
+Gold probe L24,blur1+blur3+hflip,3,0.90705
+Gold probe L24,orig+blur1+dae,3,0.90696
+Gold probe L24,blur1+blur2+blur3+hflip,4,0.90687
+Gold probe L24,blur1+blur2+hflip,3,0.90666
+Gold probe L24,orig+hflip+dae,3,0.90658
+Gold probe L24,blur2+blur3+hflip,3,0.90637
+Gold probe L24,dae,1,0.90614
+Gold probe L24,orig+blur1+blur2+blur3+hflip,5,0.90611
+Gold probe L24,blur3+hflip,2,0.90590
+Gold probe L24,orig+dae,2,0.90590
+Gold probe L24,blur2+hflip,2,0.90590
+Gold probe L24,orig+blur1+blur3+hflip,4,0.90573
+Gold probe L24,blur1+blur3,2,0.90562
+Gold probe L24,orig+blur2+blur3+hflip,4,0.90561
+Gold probe L24,orig+blur1+blur2+hflip,4,0.90548
+Gold probe L24,blur1+hflip,2,0.90544
+Gold probe L24,blur1+blur2,2,0.90544
+Gold probe L24,blur1+blur2+blur3,3,0.90541
+Gold probe L24,orig+blur1+blur2+blur3,4,0.90523
+Gold probe L24,orig+blur1+blur3,3,0.90479
+Gold probe L24,orig+blur3+hflip,3,0.90468
+Gold probe L24,orig+blur1+blur2,3,0.90456
+Gold probe L24,orig+blur2+hflip,3,0.90449
+Gold probe L24,orig+blur2+blur3,3,0.90441
+Gold probe L24,blur1,1,0.90441
+Gold probe L24,blur2+blur3,2,0.90373
+Gold probe L24,orig+blur1+hflip,3,0.90366
+Gold probe L24,blur2,1,0.90347
+Gold probe L24,orig+blur3,2,0.90332
+Gold probe L24,orig+blur2,2,0.90330
+Gold probe L24,orig+blur1,2,0.90229
+Gold probe L24,blur3,1,0.90158
+Gold probe L24,orig+hflip,2,0.89989
+Gold probe L24,hflip,1,0.89868
+Gold probe L24,orig,1,0.89559
