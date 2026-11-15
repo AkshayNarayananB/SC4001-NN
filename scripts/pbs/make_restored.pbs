@@ -17,4 +17,4 @@ conda activate $HOME/envs/vcd
 export VCD_DATA_ROOT=/scratch/users/ntu/c230202/data
 export VCD_CHECKPOINT_ROOT=/scratch/users/ntu/c230202/checkpoints
 
-python -m scripts.make_restored --dae "${DAE:-dae_v1}"
+python -m experiments.dae.make_restored --dae "${DAE:-dae_v1}"

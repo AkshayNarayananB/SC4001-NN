@@ -3,8 +3,8 @@ from the real-image logits and (optionally) the contrast-image logits, or, for t
 methods, from an intermediate layer read out through the final norm and the LM head.
 
 Every entropy-routing rule here is a function of the per-layer Yes/No logits and entropies, so
-scripts/run_layers.py + scripts/analyze_routing.py score all of them (and any hyperparameter) from
-one set of forward passes; these classes are the online versions used by scripts/run_pope.py."""
+experiments/readouts/run_layers.py + experiments/readouts/analyze_layers.py score all of them (and any hyperparameter) from
+one set of forward passes; these classes are the online versions used by experiments/vcd/run_pope.py."""
 import math
 from dataclasses import dataclass
 

@@ -20,4 +20,4 @@ export VCD_DATA_ROOT=/scratch/users/ntu/c230202/data
 export VCD_CHECKPOINT_ROOT=/scratch/users/ntu/c230202/checkpoints
 
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
-python -m scripts.train_dae --name "${NAME:-dae_v1}" --workers 15 ${ARGS:-}
+python -m experiments.dae.train_dae --name "${NAME:-dae_v1}" --workers 15 ${ARGS:-}

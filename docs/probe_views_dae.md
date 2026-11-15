@@ -45,20 +45,20 @@ Run this on the machine that wrote the existing `layers_<cond>/` logs (Akshay's 
    ```
 2. Run the whole queue. It is resumable: the smoke test comes first, then the GPU runs, then the analysis.
    ```bash
-   VCD_CHECKPOINT_ROOT=... bash scripts/queue_probe_views_dae.sh
+   VCD_CHECKPOINT_ROOT=... bash experiments/readouts/queue_probe_views_dae.sh
    ```
    The steps inside are:
    ```bash
-   python -m scripts.run_layers --views dae                       # 9 runs
-   python -m scripts.run_layers --views blur1 blur2 blur3 hflip   # 28 new runs; blur_s4/noise_s4 already done
-   python -m scripts.analyze_probe_views_dae                      # CPU, minutes
+   python -m experiments.readouts.run_layers --views dae                       # 9 runs
+   python -m experiments.readouts.run_layers --views blur1 blur2 blur3 hflip   # 28 new runs; blur_s4/noise_s4 already done
+   python -m experiments.readouts.analyze_probe_views_dae                      # CPU, minutes
    ```
 
 **Cost and disk.** That is 37 single-pass runs. At the pilot's rate (about 13 min per run), this is roughly 8 GPU hours. The hidden states take about 0.35 GB per run, so about 13 GB in total.
 
 **Partial results.** The analysis runs on whatever conditions already have all six views and marks the table as partial. Once the DAE view exists for blur s4 and noise s4, the 6-cell pilot can be extended with the DAE view after about 30 minutes of GPU time:
 ```bash
-python -m scripts.run_layers --conditions blur_s4 noise_s4 --views dae
+python -m experiments.readouts.run_layers --conditions blur_s4 noise_s4 --views dae
 ```
 
 **Outputs** go to `results/`:
@@ -68,7 +68,7 @@ python -m scripts.run_layers --conditions blur_s4 noise_s4 --views dae
 
 **Tests** (CPU, fake logs):
 ```bash
-python -m pytest scripts/tests -q
+python -m pytest experiments/readouts/tests -q
 ```
 
 ## What to look for

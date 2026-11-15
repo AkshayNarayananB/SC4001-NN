@@ -2,7 +2,7 @@
 
 All numbers below come from TEST images only, with the same protocol as the group report (§3.3).
 
-- **Split:** 100 DEV and 400 TEST images, chosen by `random.Random(0).sample(sorted(images), 100)`. This is identical to `fix_eval/common.py`.
+- **Split:** 100 DEV and 400 TEST images, chosen by `random.Random(0).sample(sorted(images), 100)`. This is identical to `experiments/protocol.py`.
 - **Cells:** 27 condition × split cells, with 2,400 questions each.
 - **Hyperparameters:** every hyperparameter, threshold and probe weight is fit on DEV only.
 - **Uncertainty:** 95% paired bootstrap over questions with 500 resamples. "Sig ↑/↓" counts the cells whose interval lies entirely above or below zero. The comparison is against the baseline for AUROC and against the matched-threshold baseline for F1.
@@ -230,8 +230,8 @@ It is a different mechanism, not a ViewLayer extension. ViewLayer adds informati
 - **Views:** ViewLayer's five (original, blur σ=1/2/3, h-flip), plus the `dae_v1`-restored image as a sixth.
 - **DEV view set:** chosen over all 63 non-empty subsets by mean DEV AUROC. The DEV scores are out-of-fold (5 image-grouped folds), so a DEV image is always scored by a probe that never saw it.
 - **Threshold:** one global DEV F1 threshold per method.
-- **Code:** `scripts/analyze_probe_views_dae.py` (Sanjana), over view logs from `scripts/queue_probe_views_dae.sh`, run on the local GPU on 2026-11-12. ViewLayer and ViewLayer+DAE are recomputed from the same logs with their published DEV configurations.
-- **Outputs:** `results/probe_views_dae_{table.md,cells.csv,dev_sweep.csv}`.
+- **Code:** `experiments/readouts/analyze_probe_views_dae.py` (Sanjana), over view logs from `experiments/readouts/queue_probe_views_dae.sh`, run on the local GPU on 2026-11-12. ViewLayer and ViewLayer+DAE are recomputed from the same logs with their published DEV configurations.
+- **Outputs:** `results/readouts/probe_views_dae_{table.md,cells.csv,dev_sweep.csv}`.
 
 ### 7.1 Main table (TEST, 27 cells)
 
@@ -320,12 +320,12 @@ F1 (%) with DEV thresholds, for the same methods:
 
 ```bash
 export HF_HOME=/mnt/Data/akshay/hf_cache HF_HUB_OFFLINE=1
-python -m scripts.run_layers                       # per-layer logits + hidden states, 9 conditions (1 pass/question)
-python -m scripts.run_layers --views blur1 blur2 blur3 hflip   # ViewLayer views for the head-to-head (blur/noise s4)
-python -m scripts.analyze_layers                   # main table, probes, held-out degradation -> results/layers_*
-python -m scripts.analyze_selective                # results/selective_table.*
-python -m scripts.compare_viewlayer                # teacher vs ViewLayer -> results/compare_viewlayer.md
-bash scripts/queue_probe_views_dae.sh              # §7: DAE view + ViewLayer views for all 9 conditions, then
-                                                   #     python -m scripts.analyze_probe_views_dae (needs checkpoints/dae/dae_v1/best.pt)
-COMPARE_METHOD="Probe L24*" python -m scripts.compare_viewlayer   # -> results/compare_viewlayer_goldprobe.md
+python -m experiments.readouts.run_layers                       # per-layer logits + hidden states, 9 conditions (1 pass/question)
+python -m experiments.readouts.run_layers --views blur1 blur2 blur3 hflip   # ViewLayer views for the head-to-head (blur/noise s4)
+python -m experiments.readouts.analyze_layers                   # main table, probes, held-out degradation -> results/readouts/layers_*
+python -m experiments.readouts.analyze_selective                # results/readouts/selective_table.*
+python -m experiments.readouts.compare_viewlayer                # teacher vs ViewLayer -> results/readouts/compare_viewlayer.md
+bash experiments/readouts/queue_probe_views_dae.sh              # §7: DAE view + ViewLayer views for all 9 conditions, then
+                                                   #     python -m experiments.readouts.analyze_probe_views_dae (needs checkpoints/dae/dae_v1/best.pt)
+COMPARE_METHOD="Probe L24*" python -m experiments.readouts.compare_viewlayer   # -> results/readouts/compare_viewlayer_goldprobe.md
 ```

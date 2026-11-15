@@ -1,6 +1,6 @@
 # Findings
 
-Running log of experimental findings, newest stage last. Metrics live in `results/metrics/`; regenerate any table with `python -m scripts.summarize --prefix <stage>`.
+Running log of experimental findings, newest stage last. Metrics live in `results/metrics/`; regenerate any table with `python -m experiments.vcd.summarize --prefix <stage>`.
 
 ## Stage 0: Reproducing VCD on clean images (2026-11-01)
 
@@ -176,11 +176,11 @@ Recall is identical across splits because the three splits share the same "yes" 
 - Full POPE splits (3000 questions each), all 9 conditions (clean, blur s1–s4, noise s1–s4).
 - Baseline vs VCD (α=1, β=0.1, T=999). Greedy decoding plus sampling with seeds 55/56/57.
 - 24 jobs, `26075007`–`26075030`.
-- Analysis: `python -m scripts.analyze --stage stage2`, run on ASPIRE, writes three files:
-  - `results/stage2_comparison.csv`: per-split F1 / accuracy / yes-ratio, with a paired-bootstrap 95% CI on ΔF1, VCD fixes vs breaks, and McNemar p for greedy.
-  - `results/stage2_diagnostics.csv`: the contrast term.
-  - `results/stage2_margins.csv`: AUROC and the matched-threshold control.
-- **AUROC scoring corrected 2026-11-11.** The first version scored answers forced by VCD's plausibility mask as ±∞, which ties 60–70% of the questions and lowers AUROC even when no answer changes. They are now ranked by the real-branch margin (`decision_score` in `scripts/analyze.py`, the same convention as `fix_eval/common.py`). The old numbers are kept in the `auroc_vcd_tied` column.
+- Analysis: `python -m experiments.vcd.analyze --stage stage2`, run on ASPIRE, writes three files:
+  - `results/vcd/stage2_comparison.csv`: per-split F1 / accuracy / yes-ratio, with a paired-bootstrap 95% CI on ΔF1, VCD fixes vs breaks, and McNemar p for greedy.
+  - `results/vcd/stage2_diagnostics.csv`: the contrast term.
+  - `results/vcd/stage2_margins.csv`: AUROC and the matched-threshold control.
+- **AUROC scoring corrected 2026-11-11.** The first version scored answers forced by VCD's plausibility mask as ±∞, which ties 60–70% of the questions and lowers AUROC even when no answer changes. They are now ranked by the real-branch margin (`decision_score` in `experiments/vcd/analyze.py`, the same convention as `experiments/protocol.py`). The old numbers are kept in the `auroc_vcd_tied` column.
 - **Status:** complete. All 72 runs finished: greedy, plus sampling with 3 seeds in every cell.
 
 ### Results: mean over the 3 splits (%)
@@ -261,9 +261,9 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
   - **B0:** baseline on the restored image.
   - **B1:** VCD on the restored image (contrast = restored + diffusion noise, T=999).
   - **B2:** VCD contrasting the restored image against the original degraded image.
-- **Comparison:** against the Stage 2 greedy baseline and VCD on the same questions. Analysis: `python -m scripts.analyze_fixb` → `results/fixb_comparison.csv`.
+- **Comparison:** against the Stage 2 greedy baseline and VCD on the same questions. Analysis: `python -m experiments.dae.analyze_fixb` → `results/dae/fixb_comparison.csv`.
 - **Rescored 2026-11-11** with the corrected AUROC convention (mask-forced answers ranked by each variant's own real-branch margin). Only the AUROCs of the masked variants (VCD, B1, B2) changed; F1 and yes-ratios are identical.
-  - `python -m scripts.analyze_fixb --test-only` → `results/fixb_comparison_test.csv` scores the 400 TEST images of `fix_eval`, for comparison with the other fixes. B0 there is .921 / .904 / .875 / .836.
+  - `python -m experiments.dae.analyze_fixb --test-only` → `results/dae/fixb_comparison_test.csv` scores the 400 TEST images of `experiments/protocol.py`, for comparison with the other fixes. B0 there is .921 / .904 / .875 / .836.
 
 ### Results: mean over the 3 splits
 
@@ -317,8 +317,8 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
 - Started as "ViewVCD": VCD's formula with a stronger real branch, `score = (1+α) · mean over views of m_L(v) − α · m_L(v_cd)`.
   - Views: the degraded image, blur σ 1/2/3, horizontal flip (all from the ViewLayer records) and the `dae_v1`-restored copy.
   - Contrast `v_cd`: VCD's diffusion-noised image at T=999, with the same noise as the Stage 2 runs. No plausibility mask.
-- Views, layer, α ∈ {0, 0.25, 0.5, 1, 2} and the threshold are chosen on the 100 DEV images; results are on the 400 TEST images (`fix_eval` scoring).
-- Runs: jobs `26199460` (smoke) and `26199954` (9 conditions). Code, full tables and caveats: `ViewLayerDAE/README.md`. Tables: `results/viewlayer_dae_*.csv`.
+- Views, layer, α ∈ {0, 0.25, 0.5, 1, 2} and the threshold are chosen on the 100 DEV images; results are on the 400 TEST images (`experiments/protocol.py` scoring).
+- Runs: jobs `26199460` (smoke) and `26199954` (9 conditions). Code, full tables and caveats: `experiments/viewlayer_dae/README.md`. Tables: `results/viewlayer/viewlayer_dae/viewlayer_dae_*.csv`.
 
 ### Results: mean over the 3 splits (TEST)
 
@@ -350,7 +350,7 @@ Margin = logit(Yes) − logit(No) at the first answer token. The VCD margin is r
    - **At noise s4 the DAE alone is as good or better:** .836 at layer 32 and .840 at layer 20, against .833 for ViewLayer+DAE (differences not significant). F1 there is 76.9 / 77.0 against 75.5.
    - Versus the DAE view alone at its best layer (20): AUROC is higher in 6 cells (clean and blur s4) and lower in none.
    - So the combination is never significantly worse than either part. The views and the layer-20 readout carry blur; the DAE carries noise, and on heavy noise the extra views add nothing to it.
-5. **Sanity checks.** The `viewlayer` variant reproduces `ViewLayer/README.md` exactly. The contrast view at layer 32 matches the Stage 2 contrast logits to within 0.11. The DAE view at layer 32 reproduces Fix B's B0 on the TEST images (.921 / .904 / .875 / .836).
+5. **Sanity checks.** The `viewlayer` variant reproduces `experiments/viewlayer/README.md` exactly. The contrast view at layer 32 matches the Stage 2 contrast logits to within 0.11. The DAE view at layer 32 reproduces Fix B's B0 on the TEST images (.921 / .904 / .875 / .836).
 
 ### Follow-ups done (2026-11-11)
 - Fix B was rescored through the shared convention and on the TEST images (see the Fix B section and finding 4 above).

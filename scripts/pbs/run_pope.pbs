@@ -19,4 +19,4 @@ export HF_HUB_OFFLINE=1
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader
 # CONFIG is a config file, or a directory whose configs run in one process (model loaded once)
 if [ -d "$CONFIG" ]; then CONFIGS=("${CONFIG%/}"/*.yaml); else CONFIGS=("$CONFIG"); fi
-python -m scripts.run_pope --config "${CONFIGS[@]}"
+python -m experiments.vcd.run_pope --config "${CONFIGS[@]}"
