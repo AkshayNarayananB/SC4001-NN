@@ -58,3 +58,37 @@ def test_lowlight_mean_preserved_in_linear_light():
     img = Image.fromarray(np.full((64, 64, 3), 128, np.uint8))
     out = np.asarray(D.low_light(img, 1e6, 0)).astype(float)
     assert abs(out.mean() - 128) < 1.0          # huge photon count -> essentially noise-free
+
+
+def test_shard_merge_and_task_ids(tmp_path, monkeypatch):
+    import json
+    import numpy as np
+    monkeypatch.setattr(P, "JOURNAL_ROOT", tmp_path)
+    base = tmp_path / "pope" / "m" / "clean_s0"
+    rows_all, hid_all = [], []
+    for i in range(2):
+        d = base / f"shard{i}of2"
+        d.mkdir(parents=True)
+        (d / "meta.json").write_text(json.dumps({"hidden_layers": [1, 2]}))
+        rows = [{"image": f"im{i}{j}", "text": "q", "m": float(j)} for j in range(3)]
+        hid = np.random.default_rng(i).normal(size=(3, 2, 4)).astype(np.float16)
+        (d / "rows.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        hid.tofile(d / "_hidden.f16")
+        rows_all += rows
+        hid_all.append(hid)
+    import pytest
+    with pytest.raises(FileNotFoundError):
+        P.Run("pope", "m", "clean_s0")          # shards not DONE yet
+    for i in range(2):
+        (base / f"shard{i}of2" / "DONE").touch()
+    r = P.Run("pope", "m", "clean_s0")
+    assert [x["image"] for x in r.rows] == [x["image"] for x in rows_all]
+    assert (r.hidden() == np.concatenate(hid_all)).all()
+
+    import os
+    os.environ.setdefault("VCD_OUTPUT_ROOT", str(tmp_path))
+    from scripts.journal.aspire import pool_worker as W
+    t = ("m", "exdark", "clean_s0", "--vcd --shard 3 --nshards 8")
+    assert W.task_id(t) == "exdark__m__clean_s0__shard3of8"
+    assert str(W.run_dir(t)).endswith("exdark/m/clean_s0/shard3of8")
+    assert str(W.run_dir(("m", "pope", "noise_s4", "--views blur1 blur2 --batch-views"))).endswith("pope/m/noise_s4__blur1")

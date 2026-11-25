@@ -1,4 +1,56 @@
 # model	pope_set	condition	extra  (scripts/journal/aspire/pool_worker.py; file order = priority)
+llava-1.5-7b	pope	lowlight_s1	--vcd
+llava-1.5-7b	pope	lowlight_s2	--vcd
+llava-1.5-7b	pope	lowlight_s3	--vcd
+llava-1.5-7b	pope	lowlight_s4	--vcd
+llava-1.5-7b	pope	motion_s1	--vcd
+llava-1.5-7b	pope	motion_s2	--vcd
+llava-1.5-7b	pope	motion_s3	--vcd
+llava-1.5-7b	pope	motion_s4	--vcd
+llava-1.5-7b	pope	jpeg_s1	--vcd
+llava-1.5-7b	pope	jpeg_s2	--vcd
+llava-1.5-7b	pope	jpeg_s3	--vcd
+llava-1.5-7b	pope	jpeg_s4	--vcd
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 0 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 1 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 2 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 3 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 4 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 5 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 6 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 7 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 8 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 9 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 10 --nshards 12
+llava-1.5-7b	exdark	clean_s0	--vcd --shard 11 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 0 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 1 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 2 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 3 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 4 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 5 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 6 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 7 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 8 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 9 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 10 --nshards 12
+qwen2.5-vl-7b	exdark	clean_s0	--vcd --shard 11 --nshards 12
+instructblip-7b	exdark	clean_s0	--vcd --shard 0 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 1 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 2 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 3 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 4 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 5 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 6 --nshards 8
+instructblip-7b	exdark	clean_s0	--vcd --shard 7 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 0 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 1 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 2 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 3 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 4 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 5 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 6 --nshards 8
+qwen2.5-vl-3b	exdark	clean_s0	--vcd --shard 7 --nshards 8
 llava-1.5-7b	pope_fresh	clean_s0	--vcd
 llava-1.5-7b	pope_fresh	blur_s1	--vcd
 llava-1.5-7b	pope_fresh	blur_s2	--vcd

@@ -41,13 +41,24 @@ def tasks():
 def task_id(t):
     model, pope_set, cond, extra = t
     view = extra.split("--views", 1)[1].split()[0] if "--views" in extra else "orig"
-    return f"{pope_set}__{model}__{cond}" + ("" if view == "orig" else f"__{view}")
+    tid = f"{pope_set}__{model}__{cond}" + ("" if view == "orig" else f"__{view}")
+    sh = shard(extra)
+    return tid + (f"__shard{sh[0]}of{sh[1]}" if sh else "")
+
+
+def shard(extra):
+    a = extra.split()
+    if "--nshards" in a and int(a[a.index("--nshards") + 1]) > 1:
+        return int(a[a.index("--shard") + 1]), int(a[a.index("--nshards") + 1])
+    return None
 
 
 def run_dir(t):
     model, pope_set, cond, extra = t
-    tid = task_id(t)
-    return OUT / pope_set / model / tid.split("__", 2)[2]
+    view = extra.split("--views", 1)[1].split()[0] if "--views" in extra else "orig"
+    d = OUT / pope_set / model / (cond + ("" if view == "orig" else f"__{view}"))
+    sh = shard(extra)
+    return d / f"shard{sh[0]}of{sh[1]}" if sh else d
 
 
 def claim(tid) -> Path | None:

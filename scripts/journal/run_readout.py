@@ -28,6 +28,7 @@ from src.paths import POPE_SET, POPE_SOURCE_IMAGES, POPE_SPLITS, pope_question_f
 from src.vlm import load_vlm
 
 HIDDEN_FRACS = (0.5, 0.625, 0.75, 1.0)
+SHARD_DIR = ""   # "shard{i}of{n}" when --nshards > 1: this process logs only images with crc32(image) % n == i
 VCD_STEP = 999
 ROOT = OUTPUT_ROOT / "journal" / POPE_SET
 
@@ -69,7 +70,7 @@ class Sink:
 
     def __init__(self, vlm, cond, view, do_vcd, out_root):
         kind, level = parse_cond(cond)
-        self.d = d = out_root / vlm.name / (cond + ("" if view == "orig" else f"__{view}"))
+        self.d = d = out_root / vlm.name / (cond + ("" if view == "orig" else f"__{view}")) / SHARD_DIR
         d.mkdir(parents=True, exist_ok=True)
         L = vlm.n_layers
         self.layers = sorted({max(1, round(f * L)) for f in HIDDEN_FRACS})
@@ -180,11 +181,18 @@ def main():
     ap.add_argument("--batch-views", action="store_true", help="all --views of a question in one batched pass")
     ap.add_argument("--limit-images", type=int, default=None, help="smoke test: first N images")
     ap.add_argument("--tag", default="", help="suffix for the output root (e.g. separate smoke variants)")
+    ap.add_argument("--shard", type=int, default=0)
+    ap.add_argument("--nshards", type=int, default=1, help="split the images into n shards (by crc32 of the name)")
     args = ap.parse_args()
+    global SHARD_DIR
+    if args.nshards > 1:
+        SHARD_DIR = f"shard{args.shard}of{args.nshards}"
     out_root = ROOT if args.limit_images is None else ROOT / f"smoke{args.limit_images}"
     if args.tag:
         out_root = out_root.with_name(out_root.name + "_" + args.tag)
     keys = unique_questions(args.limit_images)
+    if args.nshards > 1:
+        keys = [k for k in keys if zlib.crc32(k[0].encode()) % args.nshards == args.shard]
     vlm = load_vlm(args.model)
     if args.batch_views:
         for cond in args.conditions:

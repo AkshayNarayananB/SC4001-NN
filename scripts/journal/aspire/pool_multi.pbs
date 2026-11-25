@@ -1,0 +1,12 @@
+#!/bin/bash
+# Multi-node worker pool: NNODES x 4 GPUs in ONE job (one job per queue per user is the ASPIRE limit, not GPUs).
+#   qsub -l select=2:ncpus=64:ngpus=4:mem=440gb -l walltime=24:00:00 scripts/journal/aspire/pool_multi.pbs   # g4, 8 GPUs
+#PBS -N jpoolN
+#PBS -P personal-akshayna
+#PBS -q normal
+#PBS -j oe
+#PBS -o /scratch/users/ntu/akshayna/logs/
+cd $PBS_O_WORKDIR
+NN=$(sort -u $PBS_NODEFILE | wc -l)
+echo "pool_multi: $NN nodes: $(sort -u $PBS_NODEFILE | tr '\n' ' ')"
+mpiexec -n $NN --ppn 1 bash scripts/journal/aspire/node_workers.sh

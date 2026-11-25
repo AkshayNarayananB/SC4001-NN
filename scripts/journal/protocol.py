@@ -31,14 +31,21 @@ def questions(pope_set: str, split: str) -> tuple:
 
 
 class Run:
-    """Rows + hidden states of one (POPE set, model, condition, view)."""
+    """Rows + hidden states of one (POPE set, model, condition, view). A run logged in shards
+    (<run>/shard{i}of{n}/) is merged transparently once every shard is DONE."""
 
     def __init__(self, pope_set, model, cond, view="orig"):
         self.dir = d = run_dir(pope_set, model, cond, view)
-        if not (d / "DONE").exists():
-            raise FileNotFoundError(f"{d} not finished")
-        self.meta = json.loads((d / "meta.json").read_text())
-        self.rows = [json.loads(l) for l in open(d / "rows.jsonl")]
+        if (d / "DONE").exists():
+            self.parts = [d]
+        else:
+            shards = sorted(d.glob("shard*of*")) if d.exists() else []
+            n = {int(p.name.split("of")[1]) for p in shards}
+            if len(n) != 1 or len(shards) != n.pop() or not all((p / "DONE").exists() for p in shards):
+                raise FileNotFoundError(f"{d} not finished")
+            self.parts = shards
+        self.meta = json.loads((self.parts[0] / "meta.json").read_text())
+        self.rows = [json.loads(l) for p in self.parts for l in open(p / "rows.jsonl")]
         self.index = {(r["image"], r["text"]): i for i, r in enumerate(self.rows)}
         self.pope_set = pope_set
 
@@ -48,10 +55,12 @@ class Run:
     def layer_margins(self) -> np.ndarray:            # [n, L]
         return np.array([r["lm"] for r in self.rows], dtype=np.float32)
 
-    def hidden(self) -> np.ndarray:                   # [n, n_hidden_layers, dim] float16 memmap
+    def hidden(self) -> np.ndarray:                   # [n, n_hidden_layers, dim] float16
+        """A memmap for a single-part run; shards are concatenated in row order (loaded into memory)."""
         k = len(self.meta["hidden_layers"])
-        raw = np.memmap(self.dir / "_hidden.f16", dtype=np.float16, mode="r")
-        return raw.reshape(len(self.rows), k, -1)
+        parts = [np.memmap(p / "_hidden.f16", dtype=np.float16, mode="r") for p in self.parts]
+        flat = parts[0] if len(parts) == 1 else np.concatenate(parts)
+        return flat.reshape(len(self.rows), k, -1)
 
     def split_index(self, split):
         """(row indices, gold-yes bool array, image ids) for one POPE split, in question order."""
