@@ -20,6 +20,7 @@ from src.model import POPE_SUFFIX, SYSTEM, pick_device
 MODELS = {
     "llava-1.5-7b": "llava-hf/llava-1.5-7b-hf",
     "qwen2.5-vl-7b": "Qwen/Qwen2.5-VL-7B-Instruct",
+    "qwen2.5-vl-3b": "Qwen/Qwen2.5-VL-3B-Instruct",   # edge-sized model (Jetson-class deployment)
     "instructblip-7b": "Salesforce/instructblip-vicuna-7b",
 }
 QWEN_MAX_PIXELS = 640 * 640   # COCO images (<= 640 px) are fed at native resolution

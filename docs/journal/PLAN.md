@@ -52,10 +52,15 @@ Hard constraint: ASPIRE access may end ~2026-12-02..09, so every GPU-heavy run h
   synthetic->real (COCO DEV -> ExDark). Teacher without clean pairs: synthetic pairs only.
 - Compute: AUROC vs passes / latency / memory / precision Pareto; INT4 effect on readouts.
 
-### Open decisions for the user
-- Edge hardware (Jetson Orin) access for the latency table? Strongly helps RA-L; otherwise A100 + RTX 4500.
-- A faculty co-author/advisor (e.g. course instructor)? Usual for a student journal paper.
-- CHAIR stretch: in or out.
+### Decisions and open items
+- Edge hardware (2026-11-25): user can get a Jetson Nano, but only much later. The paper must not depend on it:
+  report latency + energy per question (NVML, no root) on A100 and RTX 4500, and add Qwen2.5-VL-3B as the
+  edge-sized model (tasks appended on ASPIRE). Jetson numbers (if an Orin Nano 8 GB; an original 4 GB Nano cannot
+  run a 7B VLM, only the DAE/probe add-ons) go into the revision.
+- Faculty co-author: user is considering it. Main value: recommendation letter, reviewer-aware framing, IROS
+  registration/travel funds. Prefer an NTU robotics/embedded-vision faculty member with overlap. Claude drafts the
+  outreach email + 1-page summary once the first full tables exist.
+- CHAIR stretch: undecided (default: in, if ASPIRE time remains).
 
 ## Gaps from the course report, and fixes
 
