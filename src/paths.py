@@ -4,7 +4,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = Path(os.environ.get("VCD_DATA_ROOT", REPO_ROOT / "data"))
 
-POPE_ROOT = DATA_ROOT / "pope"
+# POPE_SET selects the question/image set: "pope" (the original 500 images; DEV in the journal
+# extension) or "pope_fresh" (2000 disjoint val2014 images; held-out TEST, scripts/journal/make_fresh_pope.py)
+POPE_SET = os.environ.get("POPE_SET", "pope")
+POPE_ROOT = DATA_ROOT / POPE_SET
 POPE_QUESTIONS = POPE_ROOT / "questions"
 POPE_SOURCE_IMAGES = POPE_ROOT / "coco_val2014"
 POPE_IMAGES = POPE_ROOT / "images"

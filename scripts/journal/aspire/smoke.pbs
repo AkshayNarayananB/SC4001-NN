@@ -1,0 +1,32 @@
+#!/bin/bash
+# Smoke test for one model on A100: 10 fresh images, 3 conditions, with VCD; fails on NaNs or missing rows.
+#   qsub -v MODEL=qwen2.5-vl-7b scripts/journal/aspire/smoke.pbs
+#PBS -N jsmoke
+#PBS -P personal-akshayna
+#PBS -q normal
+#PBS -l select=1:ncpus=16:ngpus=1:mem=64gb
+#PBS -l walltime=00:45:00
+#PBS -j oe
+#PBS -o /scratch/users/ntu/akshayna/logs/
+set -euo pipefail
+cd $PBS_O_WORKDIR
+module load miniforge3/25.3.1
+eval "$(conda shell.bash hook)"
+conda activate $HOME/envs/vcdj
+export HF_HOME=/scratch/users/ntu/akshayna/hf_cache HF_HUB_OFFLINE=1
+export VCD_DATA_ROOT=/scratch/users/ntu/akshayna/data VCD_OUTPUT_ROOT=/scratch/users/ntu/akshayna/results/raw
+export VCD_CHECKPOINT_ROOT=/scratch/users/ntu/akshayna/checkpoints POPE_SET=pope_fresh
+python -m pytest scripts/tests/test_journal.py -q
+python -m scripts.journal.run_readout --model $MODEL --limit-images 10 --conditions clean_s0 noise_s4 lowlight_s4 --vcd
+python - <<PY
+import json, math, pathlib
+root = pathlib.Path("$VCD_OUTPUT_ROOT/journal/pope_fresh/smoke10/$MODEL")
+for d in sorted(root.iterdir()):
+    rows = [json.loads(l) for l in open(d / "rows.jsonl")]
+    assert (d / "DONE").exists() and len(rows) > 50, d
+    vals = [r["m"] for r in rows] + [r["cd_yes"] for r in rows]
+    assert all(math.isfinite(v) for v in vals), f"non-finite in {d}"
+    acc = sum((r["m"] > 0) for r in rows) / len(rows)
+    print(d.name, len(rows), "yes-ratio", round(acc, 3), "mean m", round(sum(r["m"] for r in rows) / len(rows), 3))
+print("SMOKE OK")
+PY
