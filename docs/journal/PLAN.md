@@ -112,3 +112,14 @@ Hard constraint: ASPIRE access may end ~2026-12-02..09, so every GPU-heavy run h
   (rand/pop/adv), VCD (decision-preserving) .968/.957/.927; VCD F1 90.5/88.6/83.7 vs matched-threshold baseline
   91.5/89.5/84.6. The course finding (VCD recalibrates, does not ground) replicates on unseen images.
   The fresh set is easier than POPE's 500 (clean AUROC .972 vs .940 on random): report both, never pool.
+
+**2026-11-25 (evening)**
+- InstructBLIP bug: the hub repo's processor_config names `InstructBlipVideoProcessor`, so AutoProcessor inserted
+  128 `<video>` placeholders and 5-D pixels; the image never reached the LLM (constant margin, output "666").
+  Fixed by loading `InstructBlipProcessor`. Smoke now also asserts margin variation and a plausible clean yes-ratio.
+- run_readout refactor (Sink): several views of a question share one batched pass (`--batch-views`). Verified on
+  ASPIRE: VCD path bit-identical to the old code; batched vs single view = fp16 noise (100% decision agreement).
+- Held-out LLaVA clean cells with CIs: VCD AUROC significantly below baseline in 3/3 cells (-0.004..-0.007) and VCD F1
+  significantly below the matched-threshold baseline in 3/3 (about -1 point). `scripts/journal/analyze_vcd.py`.
+- ASPIRE queue: 212 tasks in priority order (configs/journal/aspire_tasks.tsv). Local: llava_dev, then llava_dev_views.
+- Real degradation set: ExDark (7363 real low-light photos, 12 classes) downloading from the HF mirror fuhao7i/ExDark.
