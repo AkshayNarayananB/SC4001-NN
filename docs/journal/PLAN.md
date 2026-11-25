@@ -45,4 +45,14 @@ Living document. Newest log entries at the bottom.
   `scripts/journal/run_readout.py`: one logger (margin, per-layer logit lens, hidden states, VCD branch batched);
   `scripts/journal/protocol.py`: image-clustered bootstrap, decision-preserving AUROC, matched F1;
   `scripts/journal/bench_compute.py`: latency/memory per method and precision. Tests: `scripts/tests/test_journal.py`.
-- GPU run 1: level calibration on 600 DEV questions (results/journal/calibration.csv).
+- GPU run 1: level calibration on 600 DEV questions (results/journal/calibration.csv). Chosen levels:
+  lowlight 20/10/5/3 e- (~-4/-9/-17/-25 acc), motion 25/40/60/90 px (-4/-8/-13/-17), jpeg q10/5/3/1 (-1/-5/-8/-11).
+  References agree with the course pilot (blur sigma 10: -12.7; noise 0.7: -14.5).
+- Gate (scripts/journal/check_smoke.py): unbatched logger reproduces the course logs at all 32 layers (max 0.0006 logit).
+  Batched real+VCD pass differs only by fp16 kernel noise (mean 0.01, max 0.30 logit at mid layers, 100% decision
+  agreement), the same size as A100-vs-RTX noise, so batching is kept (~1.6x faster). Disclose in the paper.
+- Infrastructure: local `vcd-sched` (GPU-aware queue; llava_dev started 13:08) and `vcd-pull` (pulls ASPIRE results
+  every 15 min). ASPIRE account `akshayna` (project personal-akshayna, ~99.5k SU): env `~/envs/vcdj` pinned to the
+  local stack, models + data in /scratch/users/ntu/akshayna; `submit_all.sh` (nohup, login node) waits for bootstrap,
+  then submits per-model smoke jobs and the TEST arrays for all 3 models (+ DEV arrays for Qwen/InstructBLIP),
+  gated by afterok.
