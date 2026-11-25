@@ -167,7 +167,12 @@ def load_vlm(name: str, device=None, dtype=None, quant: str | None = None) -> VL
         qc = T.BitsAndBytesConfig(load_in_8bit=True) if quant == "int8" else T.BitsAndBytesConfig(
             load_in_4bit=True, bnb_4bit_compute_dtype=dtype, bnb_4bit_quant_type="nf4")
         model = cls.from_pretrained(repo, dtype=dtype, quantization_config=qc, device_map={"": 0}).eval()
-    processor = T.AutoProcessor.from_pretrained(repo)
+    if name.startswith("instructblip"):
+        # the hub repo's processor_config names InstructBlipVideoProcessor, which AutoProcessor follows: it inserts
+        # 128 <video> placeholders (4 frames) instead of 32 <image> ones, so the image never reaches the LLM
+        processor = T.InstructBlipProcessor.from_pretrained(repo)
+    else:
+        processor = T.AutoProcessor.from_pretrained(repo)
     tok = processor.tokenizer
     return VLM(name, model, processor, _token_ids(tok, yes), _token_ids(tok, no),
                _final_norm(model), model.get_output_embeddings())
