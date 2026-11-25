@@ -1,0 +1,36 @@
+#!/bin/bash
+# Test a code change in ~/SC4001-NN-test against outputs of the production code (same A100 type).
+#PBS -N jtest
+#PBS -P personal-akshayna
+#PBS -q normal
+#PBS -l select=1:ncpus=16:ngpus=1:mem=110gb
+#PBS -l walltime=00:40:00
+#PBS -j oe
+#PBS -o /scratch/users/ntu/akshayna/logs/
+cd ~/SC4001-NN-test
+module load miniforge3/25.3.1
+eval "$(conda shell.bash hook)"
+conda activate $HOME/envs/vcdj
+export HF_HOME=/scratch/users/ntu/akshayna/hf_cache HF_HUB_OFFLINE=1 VCD_DATA_ROOT=/scratch/users/ntu/akshayna/data
+export VCD_OUTPUT_ROOT=/scratch/users/ntu/akshayna/results/raw POPE_SET=pope_fresh
+python -m scripts.journal.run_readout --model llava-1.5-7b --limit-images 10 --conditions clean_s0 noise_s4 --vcd --tag refactor
+python -m scripts.journal.run_readout --model llava-1.5-7b --limit-images 10 --conditions noise_s4 --views orig blur2 hflip --batch-views --tag views
+python -m scripts.journal.run_readout --model llava-1.5-7b --limit-images 10 --conditions noise_s4 --views blur2 --tag views1
+python - <<'PY'
+import json, numpy as np
+R = "/scratch/users/ntu/akshayna/results/raw/journal/pope_fresh"
+ld = lambda p: {(r["image"], r["text"]): r for r in map(json.loads, open(p))}
+for c in ["clean_s0", "noise_s4"]:
+    a, b = ld(f"{R}/smoke10/llava-1.5-7b/{c}/rows.jsonl"), ld(f"{R}/smoke10_refactor/llava-1.5-7b/{c}/rows.jsonl")
+    k = [x for x in a if x in b]
+    print(c, "refactor vs old (VCD path): n", len(k), "max |dm|", max(abs(a[x]["m"] - b[x]["m"]) for x in k),
+          "max |dcd|", max(abs(a[x]["cd_yes"] - b[x]["cd_yes"]) for x in k))
+a, b = ld(f"{R}/smoke10_views/llava-1.5-7b/noise_s4__blur2/rows.jsonl"), ld(f"{R}/smoke10_views1/llava-1.5-7b/noise_s4__blur2/rows.jsonl")
+k = [x for x in a if x in b]
+d = np.array([np.array(a[x]["lm"]) - np.array(b[x]["lm"]) for x in k])
+print("blur2 batched(3 views) vs single: n", len(k), "mean |d|", np.abs(d).mean().round(4), "max", np.abs(d).max().round(3),
+      "decision agree", np.mean([(a[x]["m"] > 0) == (b[x]["m"] > 0) for x in k]))
+o = ld(f"{R}/smoke10_views/llava-1.5-7b/noise_s4/rows.jsonl"); h = ld(f"{R}/smoke10_views/llava-1.5-7b/noise_s4__hflip/rows.jsonl")
+print("orig vs hflip differ (sanity):", np.mean([abs(o[x]["m"] - h[x]["m"]) for x in o]).round(3))
+print("TEST DONE")
+PY

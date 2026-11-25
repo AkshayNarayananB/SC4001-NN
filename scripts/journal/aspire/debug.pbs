@@ -1,0 +1,15 @@
+#!/bin/bash
+#   qsub -v MODEL=instructblip-7b scripts/journal/aspire/debug.pbs
+#PBS -N jdebug
+#PBS -P personal-akshayna
+#PBS -q normal
+#PBS -l select=1:ncpus=16:ngpus=1:mem=110gb
+#PBS -l walltime=00:20:00
+#PBS -j oe
+#PBS -o /scratch/users/ntu/akshayna/logs/
+cd $PBS_O_WORKDIR
+module load miniforge3/25.3.1
+eval "$(conda shell.bash hook)"
+conda activate $HOME/envs/vcdj
+export HF_HOME=/scratch/users/ntu/akshayna/hf_cache HF_HUB_OFFLINE=1 VCD_DATA_ROOT=/scratch/users/ntu/akshayna/data POPE_SET=pope
+python -m scripts.journal.debug_vlm --model $MODEL

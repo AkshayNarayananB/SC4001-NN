@@ -27,6 +27,11 @@ for d in sorted(root.iterdir()):
     vals = [r["m"] for r in rows] + [r["cd_yes"] for r in rows]
     assert all(math.isfinite(v) for v in vals), f"non-finite in {d}"
     acc = sum((r["m"] > 0) for r in rows) / len(rows)
-    print(d.name, len(rows), "yes-ratio", round(acc, 3), "mean m", round(sum(r["m"] for r in rows) / len(rows), 3))
+    ms = [r["m"] for r in rows]
+    sd = (sum((v - sum(ms) / len(ms)) ** 2 for v in ms) / len(ms)) ** 0.5
+    print(d.name, len(rows), "yes-ratio", round(acc, 3), "mean m", round(sum(ms) / len(ms), 3), "sd m", round(sd, 3))
+    assert sd > 0.2, f"margin does not vary across questions in {d} (broken forward pass?)"
+    if d.name == "clean_s0":
+        assert 0.1 < acc < 0.9, f"implausible clean yes-ratio {acc} in {d}"
 print("SMOKE OK")
 PY
