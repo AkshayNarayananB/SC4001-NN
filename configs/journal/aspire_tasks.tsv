@@ -41,27 +41,6 @@ qwen2.5-vl-7b	pope_fresh	jpeg_s1	--vcd
 qwen2.5-vl-7b	pope_fresh	jpeg_s2	--vcd
 qwen2.5-vl-7b	pope_fresh	jpeg_s3	--vcd
 qwen2.5-vl-7b	pope_fresh	jpeg_s4	--vcd
-qwen2.5-vl-7b	pope	clean_s0	--vcd
-qwen2.5-vl-7b	pope	blur_s1	--vcd
-qwen2.5-vl-7b	pope	blur_s2	--vcd
-qwen2.5-vl-7b	pope	blur_s3	--vcd
-qwen2.5-vl-7b	pope	blur_s4	--vcd
-qwen2.5-vl-7b	pope	noise_s1	--vcd
-qwen2.5-vl-7b	pope	noise_s2	--vcd
-qwen2.5-vl-7b	pope	noise_s3	--vcd
-qwen2.5-vl-7b	pope	noise_s4	--vcd
-qwen2.5-vl-7b	pope	lowlight_s1	--vcd
-qwen2.5-vl-7b	pope	lowlight_s2	--vcd
-qwen2.5-vl-7b	pope	lowlight_s3	--vcd
-qwen2.5-vl-7b	pope	lowlight_s4	--vcd
-qwen2.5-vl-7b	pope	motion_s1	--vcd
-qwen2.5-vl-7b	pope	motion_s2	--vcd
-qwen2.5-vl-7b	pope	motion_s3	--vcd
-qwen2.5-vl-7b	pope	motion_s4	--vcd
-qwen2.5-vl-7b	pope	jpeg_s1	--vcd
-qwen2.5-vl-7b	pope	jpeg_s2	--vcd
-qwen2.5-vl-7b	pope	jpeg_s3	--vcd
-qwen2.5-vl-7b	pope	jpeg_s4	--vcd
 instructblip-7b	pope_fresh	clean_s0	--vcd
 instructblip-7b	pope_fresh	blur_s1	--vcd
 instructblip-7b	pope_fresh	blur_s2	--vcd
@@ -83,6 +62,48 @@ instructblip-7b	pope_fresh	jpeg_s1	--vcd
 instructblip-7b	pope_fresh	jpeg_s2	--vcd
 instructblip-7b	pope_fresh	jpeg_s3	--vcd
 instructblip-7b	pope_fresh	jpeg_s4	--vcd
+llava-1.5-7b	pope_fresh	clean_s0	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	blur_s1	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	blur_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	blur_s3	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	blur_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	noise_s1	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	noise_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	noise_s3	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	noise_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	lowlight_s1	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	lowlight_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	lowlight_s3	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	lowlight_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	motion_s1	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	motion_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	motion_s3	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	motion_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	jpeg_s1	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	jpeg_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	jpeg_s3	--views blur1 blur2 blur3 hflip dae --batch-views
+llava-1.5-7b	pope_fresh	jpeg_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	clean_s0	--vcd
+qwen2.5-vl-7b	pope	blur_s1	--vcd
+qwen2.5-vl-7b	pope	blur_s2	--vcd
+qwen2.5-vl-7b	pope	blur_s3	--vcd
+qwen2.5-vl-7b	pope	blur_s4	--vcd
+qwen2.5-vl-7b	pope	noise_s1	--vcd
+qwen2.5-vl-7b	pope	noise_s2	--vcd
+qwen2.5-vl-7b	pope	noise_s3	--vcd
+qwen2.5-vl-7b	pope	noise_s4	--vcd
+qwen2.5-vl-7b	pope	lowlight_s1	--vcd
+qwen2.5-vl-7b	pope	lowlight_s2	--vcd
+qwen2.5-vl-7b	pope	lowlight_s3	--vcd
+qwen2.5-vl-7b	pope	lowlight_s4	--vcd
+qwen2.5-vl-7b	pope	motion_s1	--vcd
+qwen2.5-vl-7b	pope	motion_s2	--vcd
+qwen2.5-vl-7b	pope	motion_s3	--vcd
+qwen2.5-vl-7b	pope	motion_s4	--vcd
+qwen2.5-vl-7b	pope	jpeg_s1	--vcd
+qwen2.5-vl-7b	pope	jpeg_s2	--vcd
+qwen2.5-vl-7b	pope	jpeg_s3	--vcd
+qwen2.5-vl-7b	pope	jpeg_s4	--vcd
 instructblip-7b	pope	clean_s0	--vcd
 instructblip-7b	pope	blur_s1	--vcd
 instructblip-7b	pope	blur_s2	--vcd
@@ -146,3 +167,47 @@ qwen2.5-vl-3b	pope	jpeg_s1	--vcd
 qwen2.5-vl-3b	pope	jpeg_s2	--vcd
 qwen2.5-vl-3b	pope	jpeg_s3	--vcd
 qwen2.5-vl-3b	pope	jpeg_s4	--vcd
+qwen2.5-vl-7b	pope_fresh	clean_s0	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	blur_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	blur_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	noise_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	noise_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	lowlight_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	lowlight_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	motion_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	motion_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	jpeg_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope_fresh	jpeg_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	clean_s0	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	blur_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	blur_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	noise_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	noise_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	lowlight_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	lowlight_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	motion_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	motion_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	jpeg_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+qwen2.5-vl-7b	pope	jpeg_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	clean_s0	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	blur_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	blur_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	noise_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	noise_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	lowlight_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	lowlight_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	motion_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	motion_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	jpeg_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope_fresh	jpeg_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	clean_s0	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	blur_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	blur_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	noise_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	noise_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	lowlight_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	lowlight_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	motion_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	motion_s4	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	jpeg_s2	--views blur1 blur2 blur3 hflip dae --batch-views
+instructblip-7b	pope	jpeg_s4	--views blur1 blur2 blur3 hflip dae --batch-views

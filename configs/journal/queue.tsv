@@ -4,3 +4,4 @@ smoke_llava_novcd	POPE_SET=pope HF_HOME=/mnt/Data/akshay/hf_cache HF_HUB_OFFLINE
 gate_llava	POPE_SET=pope HF_HOME=/mnt/Data/akshay/hf_cache HF_HUB_OFFLINE=1 nice -n 10 /home/akshay/miniconda3/bin/python -m scripts.journal.check_smoke --dir results/raw/journal/pope/smoke10/llava-1.5-7b --novcd-dir results/raw/journal/pope/smoke10_novcd/llava-1.5-7b
 llava_dev	POPE_SET=pope HF_HOME=/mnt/Data/akshay/hf_cache HF_HUB_OFFLINE=1 nice -n 10 /home/akshay/miniconda3/bin/python -m scripts.journal.run_readout --model llava-1.5-7b --vcd
 # (runs on ASPIRE) llava_test	POPE_SET=pope_fresh HF_HOME=/mnt/Data/akshay/hf_cache HF_HUB_OFFLINE=1 nice -n 10 /home/akshay/miniconda3/bin/python -m scripts.journal.run_readout --model llava-1.5-7b --vcd
+llava_dev_views	POPE_SET=pope HF_HOME=/mnt/Data/akshay/hf_cache HF_HUB_OFFLINE=1 nice -n 10 /home/akshay/miniconda3/bin/python -m scripts.journal.run_readout --model llava-1.5-7b --views blur1 blur2 blur3 hflip dae --batch-views
