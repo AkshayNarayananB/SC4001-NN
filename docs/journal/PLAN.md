@@ -123,3 +123,20 @@ Hard constraint: ASPIRE access may end ~2026-12-02..09, so every GPU-heavy run h
   significantly below the matched-threshold baseline in 3/3 (about -1 point). `scripts/journal/analyze_vcd.py`.
 - ASPIRE queue: 212 tasks in priority order (configs/journal/aspire_tasks.tsv). Local: llava_dev, then llava_dev_views.
 - Real degradation set: ExDark (7363 real low-light photos, 12 classes) downloading from the HF mirror fuhao7i/ExDark.
+
+## PIVOT (2026-11-25, approved by user)
+Literature check: "VCD only recalibrates on POPE" is already published (Mirage of Performance Gains, NeurIPS 2025,
+arXiv 2504.10020; reproducibility study arXiv 2607.25196 shows one tuned threshold constant beats every contrastive
+method; arXiv 2611.30460). Closest to the probe idea: arXiv 2607.22034 (mean token probability as confidence under
+degradation, 100 Food101 images, no probes, no POPE). DarkEQA (2512.24985) = low-light embodied QA benchmark.
+New thesis: **self-distilled readout heads for reliable VLM perception under degraded sensing.** VCD family = one
+motivating section (cite the critiques; add the degraded-input twist: degradation adds a "no" bias that VCD's
+constant yes-push happens to cancel) + baselines. Requirements: beat the tuned threshold constant, LoRA fine-tuning
+and restoration; synthetic->real transfer (ExDark; DarkEQA if obtainable); a non-POPE question format (AMBER disc.);
+abstention/calibration as headline metrics.
+
+**First make-or-break result (LLaVA, held-out fresh images, teacher fit on 7 DEV conditions, no human labels):**
+AUROC base -> teacher: clean .956->.963, blur s1 .913->.936, blur s2 .887->.920 (9/9 cells CI>0);
+F1 tuned-threshold-constant -> teacher: 84.2->89.1, 82.5->85.4, 80.7->84.1 (9/9 CI>0); AURC .072->.031 (clean).
+`scripts/journal/analyze_readout.py`. Next: ExDark (real low light, no tuning) running on ASPIRE (12 shards).
+Infra: image sharding + multi-node pool jobs (pool_multi.pbs); 2 gdev 4-GPU burst jobs for today.
