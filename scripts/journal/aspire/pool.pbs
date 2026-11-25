@@ -1,0 +1,26 @@
+#!/bin/bash
+# Worker-pool job: one pool_worker per GPU, all sharing configs/journal/aspire_tasks.tsv.
+# ASPIRE allows one running job per user per queue, and routes by GPU count (g1: 1, g2: 2-3, g3: 4, glong: >24h),
+# so several pool jobs of different sizes run at the same time:
+#   qsub -l select=1:ncpus=16:ngpus=1:mem=110gb -l walltime=24:00:00 scripts/journal/aspire/pool.pbs
+#   qsub -l select=1:ncpus=48:ngpus=3:mem=330gb -l walltime=24:00:00 scripts/journal/aspire/pool.pbs
+#   qsub -l select=1:ncpus=64:ngpus=4:mem=440gb -l walltime=24:00:00 scripts/journal/aspire/pool.pbs
+#PBS -N jpool
+#PBS -P personal-akshayna
+#PBS -q normal
+#PBS -j oe
+#PBS -o /scratch/users/ntu/akshayna/logs/
+cd $PBS_O_WORKDIR
+module load miniforge3/25.3.1
+eval "$(conda shell.bash hook)"
+conda activate $HOME/envs/vcdj
+export HF_HOME=/scratch/users/ntu/akshayna/hf_cache HF_HUB_OFFLINE=1
+export VCD_DATA_ROOT=/scratch/users/ntu/akshayna/data VCD_OUTPUT_ROOT=/scratch/users/ntu/akshayna/results/raw
+export VCD_CHECKPOINT_ROOT=/scratch/users/ntu/akshayna/checkpoints
+N=$(nvidia-smi -L | wc -l)
+echo "pool on $(hostname) with $N GPUs"
+for i in $(seq 0 $((N-1))); do
+  CUDA_VISIBLE_DEVICES=$i python -m scripts.journal.aspire.pool_worker > /scratch/users/ntu/akshayna/logs/pool_${PBS_JOBID%%.*}_gpu$i.log 2>&1 &
+  sleep 20   # stagger model loads
+done
+wait

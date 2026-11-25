@@ -58,8 +58,11 @@ class VLM:
         kw = {}
         if self.name.startswith("qwen"):
             kw = {"images_kwargs": {"max_pixels": QWEN_MAX_PIXELS}}
-        inputs = self.processor(images=image, text=self.prompt(question), return_tensors="pt", **kw)
-        return dict(inputs)
+        inputs = dict(self.processor(images=image, text=self.prompt(question), return_tensors="pt", **kw))
+        pv = inputs.get("pixel_values")
+        if self.name.startswith("instructblip") and pv is not None and pv.ndim == 5:
+            inputs["pixel_values"] = pv[:, 0]   # transformers 5.x processor nests images: (1, 1, 3, H, W)
+        return inputs
 
     def _to_device(self, inputs: dict) -> dict:
         out = {}

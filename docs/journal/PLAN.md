@@ -56,3 +56,17 @@ Living document. Newest log entries at the bottom.
   local stack, models + data in /scratch/users/ntu/akshayna; `submit_all.sh` (nohup, login node) waits for bootstrap,
   then submits per-model smoke jobs and the TEST arrays for all 3 models (+ DEV arrays for Qwen/InstructBLIP),
   gated by afterok.
+
+**2026-11-25 (afternoon)**
+- ASPIRE bootstrap done (env `~/envs/vcdj` = local stack; LLaVA, Qwen2.5-VL, InstructBLIP in scratch HF cache).
+  Smoke OK on A100 for LLaVA and Qwen. InstructBLIP failed: transformers 5.x processor returns 5-D pixel_values
+  (1,1,3,224,224); fixed in `src/vlm.py` encode(), re-smoke job 26362970.
+- ASPIRE limits: one running job per user per queue; queues routed by GPU count (g1 1, g2 2-3, g3 4, glong >24 h,
+  gdev <=2 h). Arrays in g1 ran one condition at a time (LLaVA TEST: 37 min/condition at 8.8 q/s with VCD).
+  Replaced by worker-pool jobs (`scripts/journal/aspire/pool.pbs` + `pool_worker.py`, atomic claims + heartbeats)
+  in g1 + g2 (3 GPU) + g3 (4 GPU) + glong: up to 9 GPUs at once. Task list: `configs/journal/aspire_tasks.tsv`.
+- Local llava_dev: 4.2 q/s with VCD on the RTX 4500 (~20 min/condition, ~7 h total).
+- First held-out result (LLaVA, fresh TEST, clean, 12,000 questions per split): baseline AUROC .972/.962/.934
+  (rand/pop/adv), VCD (decision-preserving) .968/.957/.927; VCD F1 90.5/88.6/83.7 vs matched-threshold baseline
+  91.5/89.5/84.6. The course finding (VCD recalibrates, does not ground) replicates on unseen images.
+  The fresh set is easier than POPE's 500 (clean AUROC .972 vs .940 on random): report both, never pool.
