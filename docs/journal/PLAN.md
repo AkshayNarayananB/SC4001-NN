@@ -20,6 +20,43 @@ Living document. Newest log entries at the bottom.
      (blur is a readout failure; heavy noise and low light are input failures, and restoration views help there).
   4. Compute-aware evaluation, run on an edge-class GPU and under weight quantization.
 
+## Roadmap (set 2026-11-25)
+
+Target: IEEE RA-L, submitted with the IROS 2027 presentation option (RA-L+IROS deadline is usually ~1 March; verify).
+Hard constraint: ASPIRE access may end ~2026-12-02..09, so every GPU-heavy run happens first (Phase 1).
+
+| Phase | When | Deliverable |
+|---|---|---|
+| 1. Collect (GPU) | now -> ~Dec 4 | all forward passes logged for 3 models: baseline/VCD/layers/hidden (running); views; extra baselines; INT8/INT4; real-degradation set; CHAIR subset |
+| 2. Analyse (CPU, local) | ~Nov 30 -> Dec 14 | every table and figure from logged data; probes; transfer tests; compute Pareto; VCD decomposition |
+| 3. Write | Dec 14 -> Jan 10 | RA-L draft (6+2 pages) + supplement; co-author review |
+| 4. Harden | Jan 10 -> Feb | internal review, figure polish, anonymised code + data release, submit |
+
+### Phase 1 runs (priority order)
+1. [running] Baseline + VCD + logit lens + hidden states: LLaVA, Qwen2.5-VL, InstructBLIP x TEST(21 conditions) + DEV(21).
+2. Views (blur 1/2/3, hflip, DAE) for ViewLayer and probe x views: LLaVA on all 21 conditions; Qwen/InstructBLIP on clean + s2 + s4.
+   Needs batched multi-view passes in run_readout first.
+3. Missing baselines that reviewers will ask for, all first-token computable: ICD (instruction-disturbance contrast),
+   VDD/blank-image contrast, PAI (image-attention amplification, one hooked pass). M3ID / OPERA only if time allows.
+4. Quantisation: LLaVA and Qwen in INT8 and INT4 on TEST (all conditions, 1000 images); latency and memory benchmarks on A100 and RTX 4500.
+5. Real degradations (key for RA-L): ExDark (real low-light photos with boxes for 12 COCO classes) -> POPE-style questions;
+   optionally ACDC (night/fog/rain driving). No tuning on these: pure transfer test.
+6. Stretch: CHAIR captioning (500 images x clean/s2/s4 x baseline/VCD) + per-token probe.
+
+### Phase 2 analyses
+- VCD recalibration across models and degradations (AUROC, matched threshold, image-clustered CIs).
+- Short theory: decompose VCD's score into a bias shift and a discriminative term; predict when AUROC can rise (needs
+  the contrast margin to correlate with the label beyond the real margin) and verify the prediction on all cells.
+- Readouts per model: best layer, gold probe, clean-teacher probe; probe x views; DAE view.
+- Generalisation: held-out degradation types (train 3 kinds, test 2), held-out object classes, DEV->TEST images,
+  synthetic->real (COCO DEV -> ExDark). Teacher without clean pairs: synthetic pairs only.
+- Compute: AUROC vs passes / latency / memory / precision Pareto; INT4 effect on readouts.
+
+### Open decisions for the user
+- Edge hardware (Jetson Orin) access for the latency table? Strongly helps RA-L; otherwise A100 + RTX 4500.
+- A faculty co-author/advisor (e.g. course instructor)? Usual for a student journal paper.
+- CHAIR stretch: in or out.
+
 ## Gaps from the course report, and fixes
 
 | Gap | Fix | Status |
