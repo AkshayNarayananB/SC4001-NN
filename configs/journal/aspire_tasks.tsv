@@ -1,4 +1,117 @@
 # model	pope_set	condition	extra  (scripts/journal/aspire/pool_worker.py; file order = priority)
+# --- Photons-or-FLOPs (2026-11-26): capture sweeps first ---
+llava-1.5-7b	pope	@capture	--grid smoke --limit-images 2 --batch 16 --workers 12
+qwen2.5-vl-7b	pope	@capture	--grid smoke --limit-images 2 --batch 16 --workers 12
+qwen2.5-vl-3b	pope	@capture	--grid smoke --limit-images 2 --batch 16 --workers 12
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 0 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 1 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 2 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 3 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 4 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 5 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 6 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 7 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 8 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 9 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 10 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 11 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 12 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 13 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 14 --nshards 16
+llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 15 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 0 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 1 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 2 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 3 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 4 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 5 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 6 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 7 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 8 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 9 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 10 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 11 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 12 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 13 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 14 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 15 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 0 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 1 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 2 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 3 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 4 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 5 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 6 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 7 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 8 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 9 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 10 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 11 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 12 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 13 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 14 --nshards 16
+qwen2.5-vl-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 15 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 0 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 1 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 2 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 3 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 4 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 5 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 6 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 7 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 8 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 9 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 10 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 11 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 12 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 13 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 14 --nshards 16
+qwen2.5-vl-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 15 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 0 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 1 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 2 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 3 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 4 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 5 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 6 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 7 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 8 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 9 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 10 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 11 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 12 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 13 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 14 --nshards 16
+qwen2.5-vl-3b	pope	@capture	--grid full --batch 16 --workers 12 --shard 15 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 0 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 1 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 2 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 3 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 4 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 5 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 6 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 7 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 8 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 9 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 10 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 11 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 12 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 13 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 14 --nshards 16
+qwen2.5-vl-3b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 15 --nshards 16
+llava-1.5-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 0 --nshards 4
+llava-1.5-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 1 --nshards 4
+llava-1.5-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 2 --nshards 4
+llava-1.5-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 3 --nshards 4
+qwen2.5-vl-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 0 --nshards 4
+qwen2.5-vl-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 1 --nshards 4
+qwen2.5-vl-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 2 --nshards 4
+qwen2.5-vl-7b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 3 --nshards 4
+qwen2.5-vl-3b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 0 --nshards 4
+qwen2.5-vl-3b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 1 --nshards 4
+qwen2.5-vl-3b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 2 --nshards 4
+qwen2.5-vl-3b	pope_fresh	@capture	--grid capsel --caption --limit-images 200 --batch 16 --workers 12 --shard 3 --nshards 4
+# --- earlier readout tasks (background material) ---
 qwen2.5-vl-7b	pope	clean_s0	--vcd
 qwen2.5-vl-7b	pope	blur_s1	--vcd
 qwen2.5-vl-7b	pope	blur_s2	--vcd

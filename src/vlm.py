@@ -105,10 +105,11 @@ class VLM:
         return out.logits[:, -1].float(), hs
 
     @torch.inference_mode()
-    def scores_shared_prefix(self, images: list, texts: list, batch: int = 16) -> torch.Tensor:
+    def scores_shared_prefix(self, images: list, texts: list, batch: int = 16, transforms: list = None) -> torch.Tensor:
         """First-token (m, yes, no, top) for every (image, text) pair, all images of the SAME size.
         The prompt prefix (system + image tokens + shared question start) is run once per image chunk with a
-        KV cache; each question then runs only its own suffix tokens. Returns [len(images), len(texts), 4]."""
+        KV cache; each question then runs only its own suffix tokens. `transforms[i]` (optional) maps image i's
+        encoding to a new one (e.g. VCD's pixel-space noise). Returns [len(images), len(texts), 4]."""
         ids = [self.encode(images[0], t)["input_ids"][0] for t in texts]
         p = 0
         while all(len(x) > p + 1 for x in ids) and all(x[p] == ids[0][p] for x in ids):
@@ -118,6 +119,8 @@ class VLM:
         for s in range(0, len(images), batch):
             chunk = images[s:s + batch]
             enc = [self.encode(im, texts[0]) for im in chunk]
+            if transforms is not None:
+                enc = [tf(e) if tf is not None else e for e, tf in zip(enc, transforms[s:s + batch])]
             inputs = {k: torch.cat([e[k] for e in enc], 0) if torch.is_tensor(enc[0][k]) else enc[0][k]
                       for k in enc[0]}
             L = inputs["input_ids"].shape[1]

@@ -14,6 +14,7 @@ import json
 import zlib
 from itertools import product
 
+import torch
 from PIL import Image
 from tqdm import tqdm
 
@@ -24,12 +25,20 @@ from src.vlm import load_vlm
 
 T = C.T_REF_MS
 EXPOSURES = [round(T * 2 ** k, 1) for k in range(-3, 4)]       # 4.2 ... 266.4 ms
+VIEW_TS = (8.3, 33.3, 133.2)      # single-shot exposures that also get the 6-pass multi-view compute arm
+MV_VIEWS = ("blur1", "blur2", "blur3", "hflip")   # + orig + dae = ViewLayer's six views
 GRIDS = {
     # quick response-surface calibration on DEV
     "calib": dict(lights=(0.03, 0.06, 0.15, 0.6), speeds=(0.0, 0.3, 1.0),
                   settings=[(round(T / 8, 1), 1, "single"), (round(T, 1), 1, "single"), (round(T * 8, 1), 1, "single"),
                             (round(T / 2, 1), 16, "aligned"), (round(T, 1), 8, "aligned")]),
+    "smoke": dict(lights=(0.15,), speeds=(0.0, 0.3), settings=None, compute=True),
 }
+# CHAIR captions: a representative subset (short / video-rate / long single shots, and the two burst shapes)
+GRIDS["capsel"] = dict(lights=(0.06, 0.15, 0.3, 0.6), speeds=(0.0, 0.1, 0.3, 0.6),
+                       settings=[(8.3, 1, "single"), (33.3, 1, "single"), (266.4, 1, "single"),
+                                 (16.6, 16, "aligned"), (33.3, 8, "aligned")])
+GRIDS["full"] = dict(lights=(0.06, 0.15, 0.3, 0.6), speeds=(0.0, 0.1, 0.3, 0.6), settings=None, compute=True)
 
 
 def full_settings(max_total=T * 8 + 1, ns=(1, 2, 4, 8, 16), fusions=("naive", "aligned")):
@@ -42,17 +51,29 @@ def full_settings(max_total=T * 8 + 1, ns=(1, 2, 4, 8, 16), fusions=("naive", "a
 
 
 def grid_conditions(g):
-    """[(Capture, group_key)] where group_key = (light, speed, t) shares one frame set."""
+    """Capture settings of a grid (settings=None -> full_settings())."""
     caps = []
     for light, speed in product(g["lights"], g["speeds"]):
-        for t, n, f in g["settings"]:
+        for t, n, f in (g["settings"] or full_settings()):
             if speed == 0 and f == "aligned":       # static camera: alignment can only add error -> skip
                 f = "naive"
             caps.append(C.Capture(light, speed, t, n, f))
     return list(dict.fromkeys(caps))
 
 
-def render_all(img, name, caps):
+def compute_extras(caps):
+    """Compute-arm variants scored alongside the captures: for every single-frame capture, VCD's contrast image
+    (__vcdneg) and the DAE-restored image (__dae); for single-frame captures at VIEW_TS, the multi-view views."""
+    ex = []
+    for c in caps:
+        if c.n == 1:
+            ex += [(c.name, "vcdneg"), (c.name, "dae")]
+            if c.t_ms in VIEW_TS:
+                ex += [(c.name, v) for v in MV_VIEWS]
+    return ex
+
+
+def render_all(img, name, caps, extras=()):
     out = {}
     groups = {}
     for c in caps:
@@ -63,20 +84,28 @@ def render_all(img, name, caps):
         ims = C.capture_prefixes(img, name, light, speed, t, ns, fus)
         for c in cs:
             out[c.name] = ims[(c.n, c.fusion)]
+    if extras:
+        from scripts.run_layers import make_view
+        for base, v in extras:
+            if v in MV_VIEWS:
+                out[f"{base}__{v}"] = make_view(out[base], v)
     return out
 
 
-_CAPS = None
+_CAPS, _EXTRAS = None, ()
 
 
 def _render_worker(name):
     img = Image.open(POPE_SOURCE_IMAGES / name).convert("RGB")
-    return name, render_all(img, name, _CAPS)
+    return name, render_all(img, name, _CAPS, _EXTRAS)
 
 
-def _init(caps):
-    global _CAPS
-    _CAPS = caps
+def _init(caps, extras):
+    global _CAPS, _EXTRAS
+    _CAPS, _EXTRAS = caps, extras
+
+
+VCD_STEP = 999
 
 
 def main():
@@ -92,6 +121,7 @@ def main():
     ap.add_argument("--nshards", type=int, default=1)
     a = ap.parse_args()
     caps = grid_conditions(GRIDS[a.grid])
+    extras = compute_extras(caps) if GRIDS[a.grid].get("compute") and not a.caption else []
     keys = unique_questions(a.limit_images)
     if a.nshards > 1:
         keys = [k for k in keys if zlib.crc32(k[0].encode()) % a.nshards == a.shard]
@@ -101,6 +131,7 @@ def main():
         out = ROOT / a.model / f"{kind}_{a.grid}_lim{a.limit_images}" / (f"shard{a.shard}of{a.nshards}" if a.nshards > 1 else "")
     out.mkdir(parents=True, exist_ok=True)
     meta = dict(model=a.model, pope_set=POPE_SET, grid=a.grid, conditions=[c.name for c in caps],
+                extras=[f"{b}__{v}" for b, v in extras], vcd_step=VCD_STEP,
                 caption=a.caption, max_new_tokens=a.max_new_tokens if a.caption else None, read_noise=C.READ_NOISE_E, align_down=C.ALIGN_DOWN, align_max_px=C.ALIGN_MAX_PX)
     mp = out / "meta.json"
     if mp.exists():
@@ -121,10 +152,15 @@ def main():
         rp.write_text("".join(x + "\n" for x in good))
     print(f"{a.model} {POPE_SET} {a.grid}: {len(caps)} settings, {len(todo)}/{len(by_img)} images to run", flush=True)
     vlm = load_vlm(a.model)
+    from scripts.run_layers import make_view
+
+    def vcd_tf(name, cond):     # VCD contrast branch: forward-diffusion noise on the normalised pixels (T=999)
+        g = torch.Generator().manual_seed(zlib.crc32(f"{name}|{cond}".encode()))
+        return lambda enc: vlm.add_vcd_noise(enc, VCD_STEP, g)
     import multiprocessing as mp
     ctx = mp.get_context("spawn")
     with open(rp, "a") as fr, open(out / "images.done", "a") as fd, \
-            ctx.Pool(a.workers, initializer=_init, initargs=(caps,)) as pool:
+            ctx.Pool(a.workers, initializer=_init, initargs=(caps, extras)) as pool:
         for name, ims in tqdm(pool.imap(_render_worker, todo), total=len(todo), mininterval=60):
             names, texts = list(ims), by_img[name]
             if a.caption:
@@ -133,7 +169,15 @@ def main():
                     fr.write(json.dumps(dict(image=name, cond=c, caption=t)) + "\n")
                 fr.flush(); fd.write(name + "\n"); fd.flush()
                 continue
-            S = vlm.scores_shared_prefix([ims[c] for c in names], texts, a.batch)
+            if extras:     # DAE runs on the GPU in this process; VCD noise is applied to the encoding
+                for b, v in extras:
+                    if v == "dae":
+                        ims[f"{b}__dae"] = make_view(ims[b], "dae")
+                    elif v == "vcdneg":
+                        ims[f"{b}__vcdneg"] = ims[b]
+                names = list(ims)
+            tfs = [vcd_tf(name, c) if c.endswith("__vcdneg") else None for c in names]
+            S = vlm.scores_shared_prefix([ims[c] for c in names], texts, a.batch, tfs)
             for i, c in enumerate(names):
                 for j, text in enumerate(texts):
                     m, y, n, tp = S[i, j].tolist()

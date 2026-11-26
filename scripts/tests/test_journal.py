@@ -92,3 +92,25 @@ def test_shard_merge_and_task_ids(tmp_path, monkeypatch):
     assert W.task_id(t) == "exdark__m__clean_s0__shard3of8"
     assert str(W.run_dir(t)).endswith("exdark/m/clean_s0/shard3of8")
     assert str(W.run_dir(("m", "pope", "noise_s4", "--views blur1 blur2 --batch-views"))).endswith("pope/m/noise_s4__blur1")
+
+
+def test_capture_task_ids(tmp_path, monkeypatch):
+    import os
+    os.environ.setdefault("VCD_OUTPUT_ROOT", str(tmp_path))
+    from scripts.journal.aspire import pool_worker as W
+    t = ("m", "pope_fresh", "@capture", "--grid full --limit-images 500 --shard 2 --nshards 16")
+    assert W.task_id(t) == "pope_fresh__m__capture_full_lim500__shard2of16"
+    assert str(W.run_dir(t)).endswith("pope_fresh/m/capture_full_lim500/shard2of16")
+    t = ("m", "pope", "@capture", "--grid full --caption --limit-images 200")
+    assert W.task_id(t) == "pope__m__caption_full_lim200"
+
+
+def test_capture_prefix_consistency():
+    from src import capture as C
+    rng = np.random.default_rng(0)
+    img = Image.fromarray(rng.integers(0, 256, (40, 56, 3), dtype=np.uint8))
+    a, _ = C.frames(img, "x.jpg", 0.3, 0.5, 8.0, 4)
+    b, _ = C.frames(img, "x.jpg", 0.3, 0.5, 8.0, 2)
+    assert all((x == y).all() for x, y in zip(a[:2], b))
+    hi = np.asarray(C.capture(img, "x.jpg", C.Capture(1e6, 0.0, 33.3)), float)
+    assert np.abs(hi - np.asarray(img, float)).mean() < 1.0

@@ -2,7 +2,8 @@
 
     CUDA_VISIBLE_DEVICES=0 python -m scripts.journal.aspire.pool_worker
 
-Task line: "<model>\t<pope_set>\t<condition>\t<extra run_readout args>". Tasks run in file order; the file is
+Task line: "<model>\t<pope_set>\t<condition>\t<extra run_readout args>". Condition "@capture" runs
+scripts.journal.run_capture instead (extra args: --grid G [--caption] [--limit-images N] [--shard i --nshards n]). Tasks run in file order; the file is
 re-read before every claim, so tasks can be appended while jobs run. Claims are atomic directories under
 $VCD_OUTPUT_ROOT/journal/_claims/ with a heartbeat file touched every 60 s; a claim whose heartbeat is older than
 STALE_S (worker killed, e.g. by walltime) is taken over. run_readout is resumable, so a taken-over task continues
@@ -38,8 +39,22 @@ def tasks():
     return out
 
 
+def _arg(extra, flag, default=None):
+    a = extra.split()
+    return a[a.index(flag) + 1] if flag in a else default
+
+
+def capture_name(extra):
+    kind = "caption" if "--caption" in extra.split() else "capture"
+    lim = _arg(extra, "--limit-images")
+    return f"{kind}_{_arg(extra, '--grid', 'calib')}" + (f"_lim{lim}" if lim else "")
+
+
 def task_id(t):
     model, pope_set, cond, extra = t
+    if cond == "@capture":
+        sh = shard(extra)
+        return f"{pope_set}__{model}__{capture_name(extra)}" + (f"__shard{sh[0]}of{sh[1]}" if sh else "")
     view = extra.split("--views", 1)[1].split()[0] if "--views" in extra else "orig"
     tid = f"{pope_set}__{model}__{cond}" + ("" if view == "orig" else f"__{view}")
     sh = shard(extra)
@@ -55,6 +70,10 @@ def shard(extra):
 
 def run_dir(t):
     model, pope_set, cond, extra = t
+    if cond == "@capture":
+        d = OUT / pope_set / model / capture_name(extra)
+        sh = shard(extra)
+        return d / f"shard{sh[0]}of{sh[1]}" if sh else d
     view = extra.split("--views", 1)[1].split()[0] if "--views" in extra else "orig"
     d = OUT / pope_set / model / (cond + ("" if view == "orig" else f"__{view}"))
     sh = shard(extra)
@@ -116,8 +135,11 @@ def main():
             log(f"START {tid}")
             stop = threading.Event()
             threading.Thread(target=heartbeat, args=(c, stop), daemon=True).start()
-            cmd = [sys.executable, "-m", "scripts.journal.run_readout", "--model", model, "--conditions", cond,
-                   *extra.split()]
+            if cond == "@capture":
+                cmd = [sys.executable, "-m", "scripts.journal.run_capture", "--model", model, *extra.split()]
+            else:
+                cmd = [sys.executable, "-m", "scripts.journal.run_readout", "--model", model, "--conditions", cond,
+                       *extra.split()]
             code = subprocess.call(cmd, cwd=REPO, env={**os.environ, "POPE_SET": pope_set})
             stop.set()
             if code == 0 and (run_dir(t) / "DONE").exists():

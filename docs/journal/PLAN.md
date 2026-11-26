@@ -190,3 +190,9 @@ Infra: image sharding + multi-node pool jobs (pool_multi.pbs); 2 gdev 4-GPU burs
   short-frame bursts least bad. Dark failure = omission (yes-ratio -> 0.7%), not commission. Photons buy +0.17-0.21
   AUROC vs +0.02-0.09 for compute fixes; equal-latency comparison is the crux. Grid for full run: drop light 0.03 and
   speed 1.0 (floors), add light 0.3 and speeds 0.1/0.6.
+- 2026-11-26 real data: user has Samsung S25 Ultra, no Baidu account -> LOD dropped; own phone captures become the
+  primary real-sensor validation (protocol docs/journal/PHONE_CAPTURE.md; pilot first to find a single-frame RAW
+  path, since Expert RAW merges frames). Optional extra: RAW-NOD (Sony/Nikon night RAW, 3 classes) needs a Google
+  Form with the user's own details.
+- 2026-11-26 ASPIRE: 111 capture tasks queued at the top of aspire_tasks.tsv (3 smoke, 96 grid shards = 3 models x
+  {DEV 500, TEST 500} x 16, 12 caption shards on 200 TEST images x 80 settings). Older readout tasks follow.
