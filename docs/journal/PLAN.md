@@ -140,3 +140,14 @@ AUROC base -> teacher: clean .956->.963, blur s1 .913->.936, blur s2 .887->.920 
 F1 tuned-threshold-constant -> teacher: 84.2->89.1, 82.5->85.4, 80.7->84.1 (9/9 CI>0); AURC .072->.031 (clean).
 `scripts/journal/analyze_readout.py`. Next: ExDark (real low light, no tuning) running on ASPIRE (12 shards).
 Infra: image sharding + multi-node pool jobs (pool_multi.pbs); 2 gdev 4-GPU burst jobs for today.
+
+**2026-11-26 morning: full LLaVA readout results + ExDark verdict**
+- Fresh TEST, all 21 conditions: teacher probe (fit on all 21 DEV conditions, no human labels) beats base AUROC and
+  the tuned threshold constant's F1 in every cell (e.g. motion s4 AUROC .789->.850, F1 72.6->77.8; AURC -30..-50%).
+- ExDark (real low light, LLaVA): baseline AUROC .972 (darkest luminance quartile .975: real processed low-light
+  photos barely hurt LLaVA, unlike synthetic lowlight s4 at .675). Teacher .960 and gold probe .950: significantly
+  WORSE (3/3 cells). The probe does not transfer across datasets (likely COCO object priors). Diagnosis running:
+  within-object AUROC, residual ("safe") probe, object-centred probe (scripts/journal/diagnose_transfer.py).
+- VCD across models (fresh TEST, 63 cells): LLaVA worse AUROC in 55/63, InstructBLIP worse in 46/63, but Qwen2.5-VL
+  BETTER in 49/63 (noise s4 .563->.597, lowlight s4 .539->.573). InstructBLIP is yes-biased (88% yes) and VCD pushes it
+  toward "no": VCD's shift is not unidirectional-yes as the Mirage paper claims.
