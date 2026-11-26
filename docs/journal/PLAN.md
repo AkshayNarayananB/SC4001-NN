@@ -75,6 +75,26 @@ Hard constraint: ASPIRE access may end ~2026-12-02..09, so every GPU-heavy run h
 | Probe leakage worries | Held-out object classes, held-out degradation types, cross-dataset (fresh images) | todo |
 | Yes/No only | Stretch goal: per-token readout + CHAIR on captions | later |
 
+## PIVOT 2 (2026-11-26, approved by user): "Photons or FLOPs?"
+
+User feedback: patching the probe is incremental; start from first principles. ALL prior work counts as background
+(VCD-only-recalibrates on degraded inputs across 3 models; restoration = input fix not VCD fix; ViewLayer; probe
+decomposition: real within-object visual gain + dataset-specific object prior; ExDark: processed real low-light barely
+hurts LLaVA). Synthesis: post-hoc decoding fixes cannot recover information never captured; the leverage is at capture.
+
+Question: under a fixed latency/energy budget, should a robot spend it on COMPUTE (VCD, views, restoration, bigger
+model) or on SENSING (longer exposure = fewer noise but more motion blur; burst of N short frames + fusion; re-capture)?
+Method: closed-loop, uncertainty-driven capture policy (VLM's own margin decides: answer / capture another frame /
+change exposure), compared to compute-side fixes at equal latency and energy.
+
+Scope decisions (user, 2026-11-26):
+- Real data: LOD (paired short/long RAW, labels) + user's own phone RAW bursts (~100 scenes). Simulation on fresh COCO.
+- Models: LLaVA-1.5-7B, Qwen2.5-VL-7B, Qwen2.5-VL-3B (edge). InstructBLIP = background only.
+- Depth: exposure x burst sweeps with ego-motion under a fixed time budget + adaptive policy. No learned burst fusion.
+- Tasks: POPE + open-ended captions (CHAIR).
+Novelty check 2026-11-26: nearest work = RoboPhoto-VLA (camera control for aesthetics), E-VLA (event cameras),
+Dark-ISP / TA-ISP (task ISPs for detectors), edge-VLM energy papers. No sensing-vs-compute study for VLM hallucination.
+
 ## Log
 
 **2026-11-25**
@@ -161,3 +181,12 @@ Infra: image sharding + multi-node pool jobs (pool_multi.pbs); 2 gdev 4-GPU burs
   recalibration: probe ranks within object, model's own per-object mean margin sets offset). ExDark .970, fresh s4
   blur .796 / noise .774 / lowlight .723 / motion .826. Paper should report this decomposition honestly.
   Deployment note: teacher_or needs a running per-object mean of margins (streaming-friendly).
+- 2026-11-26 teacher_or full analysis (LLaVA, background material now): fresh TEST AUROC up in 63/63 cells (mean .862 ->
+  .887), F1 > tuned threshold constant in 63/63; ExDark .972 -> .970, significantly worse in 2/3 splits (tiny).
+  Probe line closed as a method; kept as background evidence that degraded VLMs hold unused within-object signal.
+- 2026-11-26 capture calibration (LLaVA, 100 DEV images, 60 settings; results/journal/capture_pope_llava-1.5-7b_capture_calib_lim100.csv):
+  crossover exists. Static: one long exposure wins (2 e-/33ms: 266ms single .917 vs 8x33 burst .838 vs 33ms .546).
+  Motion 0.3 px/ms: aligned bursts win (5 e-: burst .885 vs long .691 vs 33ms .711). Motion 1.0 px/ms: all fail,
+  short-frame bursts least bad. Dark failure = omission (yes-ratio -> 0.7%), not commission. Photons buy +0.17-0.21
+  AUROC vs +0.02-0.09 for compute fixes; equal-latency comparison is the crux. Grid for full run: drop light 0.03 and
+  speed 1.0 (floors), add light 0.3 and speeds 0.1/0.6.

@@ -24,6 +24,7 @@ MODELS = {
     "instructblip-7b": "Salesforce/instructblip-vicuna-7b",
 }
 QWEN_MAX_PIXELS = 640 * 640   # COCO images (<= 640 px) are fed at native resolution
+CAPTION_PROMPT = "Please describe this image in detail."   # CHAIR prompt used by VCD / OPERA
 
 
 @dataclass
@@ -44,8 +45,8 @@ class VLM:
     def n_layers(self) -> int:
         return self.model.config.get_text_config().num_hidden_layers
 
-    def prompt(self, question: str) -> str:
-        q = question + POPE_SUFFIX
+    def prompt(self, question: str, pope: bool = True) -> str:
+        q = question + POPE_SUFFIX if pope else question
         if self.name.startswith("llava"):
             return f"{SYSTEM} USER: <image>\n{q} ASSISTANT:"
         if self.name.startswith("qwen"):
@@ -55,11 +56,11 @@ class VLM:
             return q
         raise ValueError(self.name)
 
-    def encode(self, image, question: str) -> dict:
+    def encode(self, image, question: str, pope: bool = True) -> dict:
         kw = {}
         if self.name.startswith("qwen"):
             kw = {"images_kwargs": {"max_pixels": QWEN_MAX_PIXELS}}
-        inputs = dict(self.processor(images=image, text=self.prompt(question), return_tensors="pt", **kw))
+        inputs = dict(self.processor(images=image, text=self.prompt(question, pope), return_tensors="pt", **kw))
         pv = inputs.get("pixel_values")
         if self.name.startswith("instructblip") and pv is not None and pv.ndim == 5:
             inputs["pixel_values"] = pv[:, 0]   # transformers 5.x processor nests images: (1, 1, 3, H, W)
@@ -102,6 +103,58 @@ class VLM:
                 hs = out.language_model_outputs.hidden_states
             hs = tuple(h[:, -1] for h in hs)
         return out.logits[:, -1].float(), hs
+
+    @torch.inference_mode()
+    def scores_shared_prefix(self, images: list, texts: list, batch: int = 16) -> torch.Tensor:
+        """First-token (m, yes, no, top) for every (image, text) pair, all images of the SAME size.
+        The prompt prefix (system + image tokens + shared question start) is run once per image chunk with a
+        KV cache; each question then runs only its own suffix tokens. Returns [len(images), len(texts), 4]."""
+        ids = [self.encode(images[0], t)["input_ids"][0] for t in texts]
+        p = 0
+        while all(len(x) > p + 1 for x in ids) and all(x[p] == ids[0][p] for x in ids):
+            p += 1
+        out = torch.empty(len(images), len(texts), 4)
+        lse = lambda t, i: torch.logsumexp(t[:, i], -1)
+        for s in range(0, len(images), batch):
+            chunk = images[s:s + batch]
+            enc = [self.encode(im, texts[0]) for im in chunk]
+            inputs = {k: torch.cat([e[k] for e in enc], 0) if torch.is_tensor(enc[0][k]) else enc[0][k]
+                      for k in enc[0]}
+            L = inputs["input_ids"].shape[1]
+            for k, v in inputs.items():     # every per-token tensor (input_ids, attention_mask, mm_token_type_ids)
+                if torch.is_tensor(v) and v.dim() == 2 and v.shape[1] == L and k != "image_grid_thw":
+                    inputs[k] = v[:, :p]
+            pre = self.model(**self._to_device(inputs), use_cache=True, logits_to_keep=1)
+            cache = pre.past_key_values
+            B = len(chunk)
+            for j, x in enumerate(ids):
+                suf = x[p:].to(self.device)[None].expand(B, -1)
+                n = suf.shape[1]
+                # no attention mask (nothing is padded): Qwen then uses arange(past, past + n) + its cached
+                # rope delta for the suffix positions, which is exactly what a full forward would use
+                o = self.model(input_ids=suf, past_key_values=cache, cache_position=torch.arange(p, p + n, device=self.device),
+                               use_cache=True, logits_to_keep=1)
+                lg = o.logits[:, -1].float()
+                yes, no = lse(lg, self.yes_ids), lse(lg, self.no_ids)
+                out[s:s + B, j] = torch.stack([yes - no, yes, no, lg.max(-1).values], -1).cpu()
+                cache.crop(-n)
+            del pre, cache, o            # free this chunk's KV cache before the next prefix pass
+        return out
+
+    @torch.inference_mode()
+    def caption(self, images: list, prompt: str = CAPTION_PROMPT, max_new_tokens: int = 128, batch: int = 8) -> list:
+        """Greedy free-form captions (for CHAIR). Images of one call must share a size (same token length, so
+        batching needs no padding)."""
+        out = []
+        for s in range(0, len(images), batch):
+            enc = [self.encode(im, prompt, pope=False) for im in images[s:s + batch]]
+            inputs = {k: torch.cat([e[k] for e in enc], 0) if torch.is_tensor(enc[0][k]) else enc[0][k] for k in enc[0]}
+            n = inputs["input_ids"].shape[1]
+            ids = self.model.generate(**self._to_device(inputs), do_sample=False, max_new_tokens=max_new_tokens,
+                                      num_beams=1)
+            tok = getattr(self.processor, "tokenizer", self.processor)
+            out += [t.strip() for t in tok.batch_decode(ids[:, n:], skip_special_tokens=True)]
+        return out
 
     def margin(self, logits: torch.Tensor) -> float:
         return float(torch.logsumexp(logits[self.yes_ids], 0) - torch.logsumexp(logits[self.no_ids], 0))
