@@ -64,9 +64,10 @@ def main():
     print(f"DEV rows {len(Z)}", flush=True)
 
     fit = lambda F: LogisticRegression(C=a.C, max_iter=3000).fit(F, Y)
-    models = {"teacher": fit(Z), "residual": fit(np.c_[M[:, None] * 100, Z]),
-              "objcentred": fit(Zc), "residual+obj": fit(np.c_[M[:, None] * 100, Zc])}
-    del X
+    models = {"teacher": fit(Z)}
+    pd_ = models["teacher"].decision_function(Z)
+    zs = {"m": (M.mean(), M.std()), "p": (pd_.mean(), pd_.std())}   # DEV z-score stats
+    del X, Zc
     print("fitted", flush=True)
 
     tests = [("exdark", "clean_s0")] + [("pope_fresh", c) for c in ("clean_s0", "blur_s4", "noise_s4", "lowlight_s4", "motion_s4")]
@@ -76,10 +77,15 @@ def main():
         Ot = np.array([obj(x["text"]) for x in r.rows])
         Zct = Zt - np.stack([omean.get(o, np.zeros(Zt.shape[1], np.float32)) for o in Ot])
         m = r.col("m")
-        S = {"base": m, "teacher": models["teacher"].decision_function(Zt),
-             "residual": models["residual"].decision_function(np.c_[m[:, None] * 100, Zt]),
-             "objcentred": models["objcentred"].decision_function(Zct),
-             "residual+obj": models["residual+obj"].decision_function(np.c_[m[:, None] * 100, Zct])}
+        p = models["teacher"].decision_function(Zt)
+        zm, zp = (m - zs["m"][0]) / zs["m"][1], (p - zs["p"][0]) / zs["p"][1]
+        # label-free per-object recalibration on the (unlabelled) test pool: probe ranks within object,
+        # model's own margin sets each object's offset
+        rec = zp.copy()
+        for o in np.unique(Ot):
+            k = Ot == o
+            rec[k] = zp[k] - zp[k].mean() + zm[k].mean()
+        S = {"base": m, "teacher": p, "objrecal": rec, "ens": zm + zp, "ens+objrecal": zm + rec}
         out = []
         for name, s in S.items():
             pooled, within = [], []

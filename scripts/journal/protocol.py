@@ -137,3 +137,11 @@ def best_threshold(scores_by_cell, golds_by_cell, grid=None) -> float:
 
 
 SPLITS = POPE_SPLITS
+
+
+_OBJ_RE = __import__("re").compile(r"Is there an? (.+) in the image\?")
+
+
+def query_object(text):
+    """The object a POPE question asks about."""
+    return _OBJ_RE.match(text).group(1)

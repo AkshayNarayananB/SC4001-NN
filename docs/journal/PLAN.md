@@ -151,3 +151,13 @@ Infra: image sharding + multi-node pool jobs (pool_multi.pbs); 2 gdev 4-GPU burs
 - VCD across models (fresh TEST, 63 cells): LLaVA worse AUROC in 55/63, InstructBLIP worse in 46/63, but Qwen2.5-VL
   BETTER in 49/63 (noise s4 .563->.597, lowlight s4 .539->.573). InstructBLIP is yes-biased (88% yes) and VCD pushes it
   toward "no": VCD's shift is not unidirectional-yes as the Mirage paper claims.
+- 2026-11-26 transfer diagnosis (LLaVA; pooled / within-object AUROC, mean of 3 splits):
+  ExDark base .972/.964, teacher .960/.964 -> the ExDark loss is ENTIRELY per-object offset (COCO object-frequency
+  priors learned by the probe); within an object the probe ties the model. Fresh TEST s4: teacher's pooled gain is
+  roughly half within-object (blur .757->.839 pooled, .764->.797 within; noise .728->.807 / .723->.761; lowlight
+  .675->.769 / .675->.722; motion .789->.850 / .782->.811). So the probe = genuine visual re-ranking (transfers) +
+  dataset-specific object prior (helps on COCO, hurts on ExDark). Residual ("safe") probe = teacher; object-centred
+  hidden states kill the within-object gain on COCO. Adopted fix: teacher_or (label-free test-time object
+  recalibration: probe ranks within object, model's own per-object mean margin sets offset). ExDark .970, fresh s4
+  blur .796 / noise .774 / lowlight .723 / motion .826. Paper should report this decomposition honestly.
+  Deployment note: teacher_or needs a running per-object mean of margins (streaming-friendly).

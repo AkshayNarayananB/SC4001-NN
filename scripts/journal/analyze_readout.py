@@ -11,6 +11,9 @@ Scores per question (higher = "yes"):
   vcd        VCD (alpha=1, beta=0.1, T=999), decision-preserving AUROC, threshold 0 (as published)
   gold       logistic probe on standardised last-token hidden states (layers at 50% + 75% depth), POPE labels
   teacher    the same probe trained on the model's OWN clean-image answers (1[m_clean > 0]): no human labels
+  teacher_or teacher, object-recalibrated without labels: per queried object, the probe's mean (over the unlabelled
+             test pool of that cell) is replaced by the model's own mean margin (both z-scored with DEV stats), so the
+             probe only re-ranks answers within an object and cannot import DEV's object-frequency priors
 Probe regularisation: 5-fold CV on DEV grouped by image. Thresholds for layer_mid / probes / thr_const: one global
 value maximising mean DEV F1 over DEV cells. Reported per test cell: AUROC (+ image-clustered 95% CI of the gain
 over base), F1 at the DEV threshold, F1 gain over thr_const with CI, yes-ratio, AURC (selective answering).
@@ -112,11 +115,24 @@ def main():
         probes[name] = LogisticRegression(C=best[1], max_iter=2000).fit(X, y)
         print(f"{name}: C={best[1]:g}", flush=True)
 
+    pt_dev = probes["teacher"].decision_function(X)
+    mdev = np.concatenate([r.col("m") for r in dev.values()])
+    zst = {"m": (mdev.mean(), mdev.std()), "p": (pt_dev.mean(), pt_dev.std())}
+    del pt_dev, mdev
+
     def scores(run):
         lm = run.layer_margins()
         Z = (feats(run, idx_layers) - mu) / sd
         s = {"base": run.col("m"), "layer_mid": lm[:, mid].astype(float),
              "gold": probes["gold"].decision_function(Z), "teacher": probes["teacher"].decision_function(Z)}
+        zm = (s["base"] - zst["m"][0]) / zst["m"][1]
+        zp = (s["teacher"] - zst["p"][0]) / zst["p"][1]
+        objs = np.array([P.query_object(x["text"]) for x in run.rows])
+        rec = zp.copy()
+        for o in np.unique(objs):
+            k = objs == o
+            rec[k] = zp[k] - zp[k].mean() + zm[k].mean()
+        s["teacher_or"] = rec
         if "cd_yes" in run.rows[0]:
             s["vcd"] = P.vcd_margin(run)
         return s
@@ -124,7 +140,7 @@ def main():
     # DEV thresholds: one global value per score over all DEV cells (cells = condition x split)
     dev_s = {c: scores(r) for c, r in dev.items()}
     thr = {"base": 0.0, "vcd": 0.0}
-    for name in ("base_tuned", "layer_mid", "gold", "teacher"):
+    for name in ("base_tuned", "layer_mid", "gold", "teacher", "teacher_or"):
         src = "base" if name == "base_tuned" else name
         cells_s, cells_g = [], []
         for c, r in dev.items():
@@ -156,7 +172,7 @@ def main():
                     rec["f1_base0"], rec["f1_thr_const"] = P.f1(base > 0, g), f1_tc
                     rec["auroc_base"] = P.auroc(base, g)
                     rec["aurc_thr_const"] = aurc(base, g, thr["base_tuned"])
-                    for name in ("layer_mid", "gold", "teacher", "vcd"):
+                    for name in ("layer_mid", "gold", "teacher", "teacher_or", "vcd"):
                         if name not in sc:
                             continue
                         s = sc[name][ii]
@@ -167,7 +183,7 @@ def main():
                         rec[f"yes_{name}"] = float((s > t).mean())
                         if name != "vcd":
                             rec[f"aurc_{name}"] = aurc(s, g, t)
-                        if gname == "all" and name in ("teacher", "gold"):
+                        if gname == "all" and name in ("teacher", "teacher_or", "gold"):
                             da, df = [], []
                             for bi in P.cluster_boot(im, a.boot, rng):
                                 gg = g[bi]
@@ -189,18 +205,20 @@ def main():
         d = df[(df.set == tset) & (df.group == "all")]
         if d.empty:
             continue
-        cols = [c for c in ["auroc_base", "auroc_vcd", "auroc_layer_mid", "auroc_teacher", "auroc_gold",
-                            "f1_base0", "f1_thr_const", "f1_vcd", "f1_layer_mid", "f1_teacher", "f1_gold",
+        cols = [c for c in ["auroc_base", "auroc_vcd", "auroc_layer_mid", "auroc_teacher", "auroc_teacher_or", "auroc_gold",
+                            "f1_base0", "f1_thr_const", "f1_vcd", "f1_layer_mid", "f1_teacher", "f1_teacher_or", "f1_gold",
                             "aurc_thr_const", "aurc_teacher"] if c in d]
         t = d.groupby("condition", sort=False)[cols].mean()
         t[[c for c in cols if c.startswith("f1")]] *= 100
         sig = d.groupby("condition", sort=False).apply(lambda x: pd.Series({
             "teacher AUROC up/down": f"{(x.d_auroc_teacher_lo > 0).sum()}/{(x.d_auroc_teacher_hi < 0).sum()}",
-            "teacher F1 vs thr_const up/down": f"{(x.d_f1_teacher_lo > 0).sum()}/{(x.d_f1_teacher_hi < 0).sum()}"}))
+            "teacher F1 vs thr_const up/down": f"{(x.d_f1_teacher_lo > 0).sum()}/{(x.d_f1_teacher_hi < 0).sum()}",
+            "teacher_or AUROC up/down": f"{(x.d_auroc_teacher_or_lo > 0).sum()}/{(x.d_auroc_teacher_or_hi < 0).sum()}",
+            "teacher_or F1 vs thr_const up/down": f"{(x.d_f1_teacher_or_lo > 0).sum()}/{(x.d_f1_teacher_or_hi < 0).sum()}"}))
         md += [f"## {tset} (mean of 3 splits; F1 in %)", "", t.round(3).join(sig).to_markdown(), ""]
         if tset == "exdark":
             q = df[(df.set == "exdark") & (df.group != "all")].groupby("group")[
-                [c for c in ["auroc_base", "auroc_teacher", "auroc_gold", "auroc_layer_mid"] if c in df]].mean()
+                [c for c in ["auroc_base", "auroc_teacher", "auroc_teacher_or", "auroc_gold", "auroc_layer_mid"] if c in df]].mean()
             md += ["ExDark by luminance quartile (q1 = darkest):", "", q.round(3).to_markdown(), ""]
     (OUT / f"readout_{a.model}.md").write_text("\n".join(md))
     print("\n".join(md))
