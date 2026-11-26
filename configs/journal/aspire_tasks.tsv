@@ -15,10 +15,6 @@ llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 8 --nshar
 llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 9 --nshards 16
 llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 10 --nshards 16
 llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 11 --nshards 16
-llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 12 --nshards 16
-llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 13 --nshards 16
-llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 14 --nshards 16
-llava-1.5-7b	pope	@capture	--grid full --batch 16 --workers 12 --shard 15 --nshards 16
 llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 0 --nshards 16
 llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 1 --nshards 16
 llava-1.5-7b	pope_fresh	@capture	--grid full --limit-images 500 --batch 16 --workers 12 --shard 2 --nshards 16

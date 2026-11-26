@@ -196,3 +196,11 @@ Infra: image sharding + multi-node pool jobs (pool_multi.pbs); 2 gdev 4-GPU burs
   Form with the user's own details.
 - 2026-11-26 ASPIRE: 111 capture tasks queued at the top of aspire_tasks.tsv (3 smoke, 96 grid shards = 3 models x
   {DEV 500, TEST 500} x 16, 12 caption shards on 200 TEST images x 80 settings). Older readout tasks follow.
+- 2026-11-26 real data DECISION (user): public HDR+ bursts + SID-Sony instead of phone shooting. Labels = pseudo-labels
+  from each scene's reference (HDR+ merged result / SID long exposure), user spot-checks (~1 h).
+  HDR+: index full 3640-burst set by EXIF exposure x ISO via range requests (scripts/journal/real/hdrplus_index.py),
+  then download only the darkest few hundred bursts. SID Sony2025.zip (25 GB) downloading to /mnt/Data/akshay/real/sid.
+  Phone capture (docs/journal/PHONE_CAPTURE.md) now optional.
+- 2026-11-26 ASPIRE: running pools (started before sync) ran old pool_worker code and failed the @capture tasks
+  harmlessly (different claim ids). Submitted fresh pools g1 26371598, g2 26371599 so capture work starts when the old
+  ones hit walltime. Local GPU runs LLaVA DEV capture shards 12-15 (removed from the ASPIRE list).
